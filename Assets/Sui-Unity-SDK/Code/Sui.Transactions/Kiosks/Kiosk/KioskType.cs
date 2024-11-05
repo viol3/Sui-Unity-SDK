@@ -66,10 +66,10 @@ public class KioskType : ISerializable
     public static ISerializable Deserialize(Deserialization deserializer)
         => new KioskType
            (
-               (AccountAddress.Deserialize(deserializer) as AccountAddress),
+               AccountAddress.Deserialize(deserializer) as AccountAddress,
                (U64.Deserialize(deserializer) as U64).Value,
-               (AccountAddress.Deserialize(deserializer) as AccountAddress),
-               ((U32.Deserialize(deserializer) as U32).Value),
+               AccountAddress.Deserialize(deserializer) as AccountAddress,
+               (U32.Deserialize(deserializer) as U32).Value,
                (Bool.Deserialize(deserializer) as Bool).Value
            );
 }

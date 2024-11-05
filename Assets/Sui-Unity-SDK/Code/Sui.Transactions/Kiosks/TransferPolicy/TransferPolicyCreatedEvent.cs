@@ -1,5 +1,5 @@
 ﻿//
-//  KioskPurchaseCap.cs
+//  TransferPolicyCreatedEvent.cs
 //  Sui-Unity-SDK
 //
 //  Copyright (c) 2024 OpenDive
@@ -26,44 +26,23 @@
 using OpenDive.BCS;
 using Sui.Accounts;
 
-public class KioskPurchaseCap : ISerializable
+public class TransferPolicyCreatedEvent : ISerializable
 {
     public AccountAddress ID { get; set; }
 
-    public AccountAddress KioskID { get; set; }
-
-    public AccountAddress ItemID { get; set; }
-
-    public ulong MinPrice { get; set; }
-
-    public KioskPurchaseCap
-    (
-        AccountAddress ID,
-        AccountAddress KioskID,
-        AccountAddress ItemID,
-        ulong MinPrice
-    )
+    public TransferPolicyCreatedEvent(AccountAddress ID)
 	{
         this.ID = ID;
-        this.KioskID = KioskID;
-        this.ItemID = ItemID;
-        this.MinPrice = MinPrice;
 	}
 
     public void Serialize(Serialization serializer)
     {
         serializer.Serialize(this.ID);
-        serializer.Serialize(this.KioskID);
-        serializer.Serialize(this.ItemID);
-        serializer.Serialize(this.MinPrice);
     }
 
     public static ISerializable Deserialize(Deserialization deserializer)
-        => new KioskPurchaseCap
+        => new TransferPolicyCreatedEvent
         (
-            AccountAddress.Deserialize(deserializer) as AccountAddress,
-            AccountAddress.Deserialize(deserializer) as AccountAddress,
-            AccountAddress.Deserialize(deserializer) as AccountAddress,
-            (U64.Deserialize(deserializer) as U64).Value
+            AccountAddress.Deserialize(deserializer) as AccountAddress
         );
 }
