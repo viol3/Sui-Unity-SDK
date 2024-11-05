@@ -3,8 +3,6 @@ using Sui.Accounts;
 using Sui.Transactions;
 using Sui.Types;
 using System.Collections.Generic;
-using System.Numerics;
-using static UnityEditor.Progress;
 
 namespace Sui.Kiosks.Transaction
 {
@@ -192,6 +190,71 @@ namespace Sui.Kiosks.Transaction
                     tx.AddObjectInput(kiosk),
                     tx.AddObjectInput(kioskCap),
                     tx.AddPure(new AccountAddress(itemId)),
+                    tx.AddPure(new U64(price))
+                }
+            );
+        }
+
+        /// <summary>
+        /// Call the `kiosk::list<T>(Kiosk, KioskOwnerCap, ID, u64)` function.
+        /// List an item for sale.
+        /// </summary>
+        /// <param name="tx">The transaction to append the delist kiosk move call.</param>
+        /// <param name="itemType">The type of item being delisted.</param>
+        /// <param name="kiosk">The kiosk that contains the item being delisted.</param>
+        /// <param name="kioskCap">The kiosk price cap of the kiosk having its item being delisted.</param>
+        /// <param name="itemId">The Object ID of the item being delisted.</param>
+        public static void Delist
+        (
+            ref TransactionBlock tx,
+            string itemType,
+            IObjectArgument kiosk,
+            IObjectArgument kioskCap,
+            string itemId
+        )
+        {
+            tx.AddMoveCallTx
+            (
+                target: SuiMoveNormalizedStructType.FromStr($"{KioskConstants.KioskModule}::delist"),
+                type_arguments: new SerializableTypeTag[] { new SerializableTypeTag(itemType) },
+                arguments: new TransactionArgument[]
+                {
+                    tx.AddObjectInput(kiosk),
+                    tx.AddObjectInput(kioskCap),
+                    tx.AddPure(new AccountAddress(itemId))
+                }
+            );
+        }
+
+        /// <summary>
+        /// Call the `kiosk::place_and_list<T>(Kiosk, KioskOwnerCap, Item, u64)` function.
+        /// Place an item to the Kiosk and list it for sale.
+        /// </summary>
+        /// <param name="tx">The transaction to append the place and list move call.</param>
+        /// <param name="itemType">The type of item being placed and listed.</param>
+        /// <param name="kiosk">The kiosk that contains the item being placed and listed.</param>
+        /// <param name="kioskCap">The kiosk cap of the kiosk with the item contained in it being placed and listed.</param>
+        /// <param name="item">The item being placed and listed.</param>
+        /// <param name="price">The listing price of the item.</param>
+        public static void PlaceAndList
+        (
+            ref TransactionBlock tx,
+            string itemType,
+            IObjectArgument kiosk,
+            IObjectArgument kioskCap,
+            IObjectArgument item,
+            ulong price
+        )
+        {
+            tx.AddMoveCallTx
+            (
+                target: SuiMoveNormalizedStructType.FromStr($"{KioskConstants.KioskModule}::place_and_list"),
+                type_arguments: new SerializableTypeTag[] { new SerializableTypeTag(itemType) },
+                arguments: new TransactionArgument[]
+                {
+                    tx.AddObjectInput(kiosk),
+                    tx.AddObjectInput(kioskCap),
+                    tx.AddObjectInput(item),
                     tx.AddPure(new U64(price))
                 }
             );
