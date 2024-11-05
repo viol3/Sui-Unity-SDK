@@ -28,6 +28,9 @@ using Sui.Accounts;
 
 namespace Sui.Kiosks.Kiosk
 {
+    /// <summary>
+    /// PurchaseCap object fields (for BCS queries).
+    /// </summary>
     public class KioskPurchaseCap : ISerializable
     {
         public AccountAddress ID { get; set; }
