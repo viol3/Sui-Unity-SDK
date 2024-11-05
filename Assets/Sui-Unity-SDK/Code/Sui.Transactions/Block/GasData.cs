@@ -61,7 +61,8 @@ namespace Sui.Transactions
         [JsonProperty("owner")]
         public AccountAddress Owner { get; set; }
 
-        public GasData(
+        public GasData
+        (
             string budget = null,
             string price = null,
             Sui.Types.SuiObjectRef[] payment = null,
