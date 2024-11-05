@@ -1,7 +1,10 @@
 ﻿using OpenDive.BCS;
+using Sui.Accounts;
 using Sui.Transactions;
 using Sui.Types;
 using System.Collections.Generic;
+using System.Numerics;
+using static UnityEditor.Progress;
 
 namespace Sui.Kiosks.Transaction
 {
@@ -88,6 +91,110 @@ namespace Sui.Kiosks.Transaction
                     tx.AddObjectInput(item)
                 }
             ); 
+        }
+
+        /// <summary>
+        /// Call the `kiosk::lock<T>(Kiosk, KioskOwnerCap, TransferPolicy, Item)`
+        /// function. Lock an item in the Kiosk.
+        ///
+        /// Unlike `place` this function requires a `TransferPolicy` to exist
+        /// and be passed in. This is done to make sure the item does not get
+        /// locked without an option to take it out.
+        /// </summary>
+        /// <param name="tx">The transaction to append the lock kiosk move call.</param>
+        /// <param name="itemType">The type of item being locked in the kiosk</param>
+        /// <param name="kiosk">The kiosk having the item being locked into.</param>
+        /// <param name="kioskCap">The price cap for the kiosk being locked into with the item.</param>
+        /// <param name="policy">The policy for the lock. Required to have an option to take out the item.</param>
+        /// <param name="item">The item being locked into the kiosk.</param>
+        public static void Lock
+        (
+            ref TransactionBlock tx,
+            string itemType,
+            IObjectArgument kiosk,
+            IObjectArgument kioskCap,
+            IObjectArgument policy,
+            IObjectArgument item
+        )
+        {
+            tx.AddMoveCallTx
+            (
+                target: SuiMoveNormalizedStructType.FromStr($"{KioskConstants.KioskModule}::lock"),
+                type_arguments: new SerializableTypeTag[] { new SerializableTypeTag(itemType) },
+                arguments: new TransactionArgument[]
+                {
+                    tx.AddObjectInput(kiosk),
+                    tx.AddObjectInput(kioskCap),
+                    tx.AddObjectInput(policy),
+                    tx.AddObjectInput(item)
+                }
+            );
+        }
+
+        /// <summary>
+        /// Call the `kiosk::take<T>(Kiosk, KioskOwnerCap, ID)` function.
+        /// Take an item from the Kiosk.
+        /// </summary>
+        /// <param name="tx">The transaction to append the take kiosk move call.</param>
+        /// <param name="itemType">The type of item being taken from the kiosk.</param>
+        /// <param name="kiosk">The kiosk having the item being taken away from.</param>
+        /// <param name="kioskCap">The kiosk price cap of the kiosk having its item being taken away.</param>
+        /// <param name="itemId">The Object ID of the item being taken away.</param>
+        /// <returns>A `TransactionObjectArgument` representing the taken item.</returns>
+        public static TransactionObjectArgument Take
+        (
+            ref TransactionBlock tx,
+            string itemType,
+            IObjectArgument kiosk,
+            IObjectArgument kioskCap,
+            string itemId
+        ) => new TransactionObjectArgument
+             (
+                 tx.AddMoveCallTx
+                 (
+                     target: SuiMoveNormalizedStructType.FromStr($"{KioskConstants.KioskModule}::take"),
+                     type_arguments: new SerializableTypeTag[] { new SerializableTypeTag(itemType) },
+                     arguments: new TransactionArgument[]
+                     {
+                         tx.AddObjectInput(kiosk),
+                         tx.AddObjectInput(kioskCap),
+                         tx.AddPure(new AccountAddress(itemId))
+                     }
+                 )[0]
+             );
+
+        /// <summary>
+        /// Call the `kiosk::list<T>(Kiosk, KioskOwnerCap, ID, u64)` function.
+        /// List an item for sale.
+        /// </summary>
+        /// <param name="tx">The transaction to append the list kiosk move call.</param>
+        /// <param name="itemType">The type of item being placed for sale.</param>
+        /// <param name="kiosk">The kiosk that holds the current item.</param>
+        /// <param name="kioskCap">The kiosk price cap of the kiosk having its item being listed.</param>
+        /// <param name="itemId">The Object ID of the item being listed.</param>
+        /// <param name="price">The price of the item.</param>
+        public static void List
+        (
+            ref TransactionBlock tx,
+            string itemType,
+            IObjectArgument kiosk,
+            IObjectArgument kioskCap,
+            string itemId,
+            ulong price
+        )
+        {
+            tx.AddMoveCallTx
+            (
+                target: SuiMoveNormalizedStructType.FromStr($"{KioskConstants.KioskModule}::list"),
+                type_arguments: new SerializableTypeTag[] { new SerializableTypeTag(itemType) },
+                arguments: new TransactionArgument[]
+                {
+                    tx.AddObjectInput(kiosk),
+                    tx.AddObjectInput(kioskCap),
+                    tx.AddPure(new AccountAddress(itemId)),
+                    tx.AddPure(new U64(price))
+                }
+            );
         }
     }
 }
