@@ -1,5 +1,5 @@
 ﻿//
-//  KioskType.cs
+//  TransferPolicyType.cs
 //  Sui-Unity-SDK
 //
 //  Copyright (c) 2024 OpenDive
@@ -26,50 +26,38 @@
 using OpenDive.BCS;
 using Sui.Accounts;
 
-public class KioskType : ISerializable
+public class TransferPolicyType : ISerializable
 {
     public AccountAddress ID { get; set; }
 
-    public ulong Profits { get; set; }
+    public ulong Balance { get; set; }
 
-    public AccountAddress Owner { get; set; }
+    public BString[] Rules { get; set; }
 
-    public uint ItemCount { get; set; }
-
-    public bool AllowExtensions { get; set; }
-
-    public KioskType
+    public TransferPolicyType
     (
         AccountAddress ID,
-        ulong Profits,
-        AccountAddress Owner,
-        uint ItemCount,
-        bool AllowExtensions
+        ulong Balance,
+        BString[] Rules
     )
-    {
+	{
         this.ID = ID;
-        this.Profits = Profits;
-        this.Owner = Owner;
-        this.ItemCount = ItemCount;
-        this.AllowExtensions = AllowExtensions;
-    }
+        this.Balance = Balance;
+        this.Rules = Rules;
+	}
 
     public void Serialize(Serialization serializer)
     {
         serializer.Serialize(this.ID);
-        serializer.Serialize(this.Profits);
-        serializer.Serialize(this.Owner);
-        serializer.Serialize(this.ItemCount);
-        serializer.Serialize(this.AllowExtensions);
+        serializer.Serialize(this.Balance);
+        serializer.Serialize(this.Rules);
     }
 
     public static ISerializable Deserialize(Deserialization deserializer)
-        => new KioskType
-           (
-               AccountAddress.Deserialize(deserializer) as AccountAddress,
-               (U64.Deserialize(deserializer) as U64).Value,
-               AccountAddress.Deserialize(deserializer) as AccountAddress,
-               (U32.Deserialize(deserializer) as U32).Value,
-               (Bool.Deserialize(deserializer) as Bool).Value
-           );
+        => new TransferPolicyType
+        (
+            AccountAddress.Deserialize(deserializer) as AccountAddress,
+            (U64.Deserialize(deserializer) as U64).Value,
+            deserializer.DeserializeSequence(typeof(BString)).Values as BString[]
+        );
 }
