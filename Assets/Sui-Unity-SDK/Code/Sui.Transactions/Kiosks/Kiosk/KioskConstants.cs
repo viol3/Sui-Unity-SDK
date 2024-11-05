@@ -1,5 +1,5 @@
 ﻿//
-//  TransferPolicyType.cs
+//  KioskConstants.cs
 //  Sui-Unity-SDK
 //
 //  Copyright (c) 2024 OpenDive
@@ -23,41 +23,41 @@
 //  THE SOFTWARE.
 //
 
-using OpenDive.BCS;
-using Sui.Accounts;
-
-public class TransferPolicyType : ISerializable
+public class KioskConstants
 {
-    public AccountAddress ID { get; set; }
+    /// <summary>
+    /// The Kiosk module.
+    /// </summary>
+    public static string KioskModule = "0x2::kiosk";
 
-    public ulong Balance { get; set; }
+    /// <summary>
+    /// The Kiosk type.
+    /// </summary>
+    public static string KioskType = $"{KioskConstants.KioskModule}::Kiosk";
 
-    public BString[] Rules { get; set; }
+    /// <summary>
+    /// The Kiosk Owner Cap Type.
+    /// </summary>
+    public static string KioskOwnerCap = $"{KioskConstants.KioskModule}::KioskOwnerCap";
 
-    public TransferPolicyType
-    (
-        AccountAddress ID,
-        ulong Balance,
-        BString[] Rules
-    )
-	{
-        this.ID = ID;
-        this.Balance = Balance;
-        this.Rules = Rules;
-	}
+    /// <summary>
+    /// The Kiosk Item Type.
+    /// </summary>
+    public static string KioskItem = $"{KioskConstants.KioskModule}::Item";
 
-    public void Serialize(Serialization serializer)
-    {
-        serializer.Serialize(this.ID);
-        serializer.Serialize(this.Balance);
-        serializer.Serialize(this.Rules);
-    }
+    /// <summary>
+    /// The Kiosk Listing Type.
+    /// </summary>
+    public static string KioskListing = $"{KioskConstants.KioskModule}::Listing";
 
-    public static ISerializable Deserialize(Deserialization deserializer)
-        => new TransferPolicyType
-        (
-            AccountAddress.Deserialize(deserializer) as AccountAddress,
-            (U64.Deserialize(deserializer) as U64).Value,
-            deserializer.DeserializeSequence(typeof(BString)).Values as BString[]
-        );
+    /// <summary>
+    /// The Kiosk Lock Type.
+    /// </summary>
+    public static string KioskLock = $"{KioskConstants.KioskModule}::Lock";
+
+    /// <summary>
+    /// The Kiosk PurchaseCap Type.
+    /// </summary>
+    public static string KioskPurchaseCap = $"{KioskConstants.KioskModule}::PurchaseCap";
 }
+

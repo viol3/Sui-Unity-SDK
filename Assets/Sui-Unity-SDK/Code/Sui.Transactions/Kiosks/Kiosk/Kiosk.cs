@@ -1,5 +1,5 @@
 ﻿//
-//  TransferPolicyCreatedEvent.cs
+//  Kiosk.cs
 //  Sui-Unity-SDK
 //
 //  Copyright (c) 2024 OpenDive
@@ -26,26 +26,53 @@
 using OpenDive.BCS;
 using Sui.Accounts;
 
-namespace Sui.Kiosks.TransferPolicy
+namespace Sui.Kiosks.Kiosk
 {
-    public class TransferPolicyCreatedEvent : ISerializable
+    public class Kiosk : ISerializable
     {
         public AccountAddress ID { get; set; }
 
-        public TransferPolicyCreatedEvent(AccountAddress ID)
+        public ulong Profits { get; set; }
+
+        public AccountAddress Owner { get; set; }
+
+        public uint ItemCount { get; set; }
+
+        public bool AllowExtensions { get; set; }
+
+        public Kiosk
+        (
+            AccountAddress ID,
+            ulong Profits,
+            AccountAddress Owner,
+            uint ItemCount,
+            bool AllowExtensions
+        )
         {
             this.ID = ID;
+            this.Profits = Profits;
+            this.Owner = Owner;
+            this.ItemCount = ItemCount;
+            this.AllowExtensions = AllowExtensions;
         }
 
         public void Serialize(Serialization serializer)
         {
             serializer.Serialize(this.ID);
+            serializer.Serialize(this.Profits);
+            serializer.Serialize(this.Owner);
+            serializer.Serialize(this.ItemCount);
+            serializer.Serialize(this.AllowExtensions);
         }
 
         public static ISerializable Deserialize(Deserialization deserializer)
-            => new TransferPolicyCreatedEvent
-            (
-                AccountAddress.Deserialize(deserializer) as AccountAddress
-            );
+            => new Kiosk
+               (
+                   AccountAddress.Deserialize(deserializer) as AccountAddress,
+                   (U64.Deserialize(deserializer) as U64).Value,
+                   AccountAddress.Deserialize(deserializer) as AccountAddress,
+                   (U32.Deserialize(deserializer) as U32).Value,
+                   (Bool.Deserialize(deserializer) as Bool).Value
+               );
     }
 }

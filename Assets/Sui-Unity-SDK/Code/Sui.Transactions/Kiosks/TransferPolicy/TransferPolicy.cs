@@ -1,5 +1,5 @@
 ﻿//
-//  TransferPolicyCreatedEvent.cs
+//  TransferPolicy.cs
 //  Sui-Unity-SDK
 //
 //  Copyright (c) 2024 OpenDive
@@ -28,24 +28,39 @@ using Sui.Accounts;
 
 namespace Sui.Kiosks.TransferPolicy
 {
-    public class TransferPolicyCreatedEvent : ISerializable
+    public class TransferPolicy : ISerializable
     {
         public AccountAddress ID { get; set; }
 
-        public TransferPolicyCreatedEvent(AccountAddress ID)
+        public ulong Balance { get; set; }
+
+        public BString[] Rules { get; set; }
+
+        public TransferPolicy
+        (
+            AccountAddress ID,
+            ulong Balance,
+            BString[] Rules
+        )
         {
             this.ID = ID;
+            this.Balance = Balance;
+            this.Rules = Rules;
         }
 
         public void Serialize(Serialization serializer)
         {
             serializer.Serialize(this.ID);
+            serializer.Serialize(this.Balance);
+            serializer.Serialize(this.Rules);
         }
 
         public static ISerializable Deserialize(Deserialization deserializer)
-            => new TransferPolicyCreatedEvent
+            => new TransferPolicy
             (
-                AccountAddress.Deserialize(deserializer) as AccountAddress
+                AccountAddress.Deserialize(deserializer) as AccountAddress,
+                (U64.Deserialize(deserializer) as U64).Value,
+                deserializer.DeserializeSequence(typeof(BString)).Values as BString[]
             );
     }
 }
