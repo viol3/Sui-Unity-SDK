@@ -23,16 +23,59 @@
 //  THE SOFTWARE.
 //
 
-using Sui.Accounts;
+using System;
 using Sui.Utilities;
+using System.Text;
+using Sui.Cryptography;
+using Konscious.Security.Cryptography;
 
 namespace Sui.ZKLogin
 {
-    public class AccountAddress : AccountAddressBase
+    public class AccountAddress : Accounts.AccountAddress
     {
-        public AccountAddress ComputeZkLoginAddressFromSeed(long addressSeed, string iss)
+        /// <summary>
+        /// Computes a ZkLogin address from a seed and issuer.
+        /// </summary>
+        /// <param name="addressSeed">The address seed as BigInteger</param>
+        /// <param name="iss">The issuer string</param>
+        /// <returns>Normalized Sui address string</returns>
+        public Sui.Accounts.AccountAddress ComputeZkLoginAddressFromSeed(long addressSeed, string iss)
         {
-            return null;
+            //TS: bytesToHex(blake2b(tmp, { dkLen: 32 })).slice(0, SUI_ADDRESS_LENGTH * 2),
+            //string hex = BitConverter.ToString(bytes);
+            byte[] addressSeedBytesBigEndian = Utils.ToBigEndianBytes(addressSeed, 32);
+
+            // Normalize Google issuer
+            if (iss == "accounts.google.com")
+            {
+                iss = "https://accounts.google.com";
+            }
+
+            byte[] addressParamBytes = Encoding.UTF8.GetBytes(iss);
+            byte[] tmp = new byte[2 + addressSeedBytesBigEndian.Length + addressParamBytes.Length];
+
+
+            // Set signature scheme flag
+            tmp[0] = SignatureSchemeToFlag.ZkLogin;
+
+            // Set address param length
+            tmp[1] = (byte)addressParamBytes.Length;
+
+            // Copy address param bytes
+            Buffer.BlockCopy(addressParamBytes, 0, tmp, 2, addressParamBytes.Length);
+
+            // Copy address seed bytes
+            Buffer.BlockCopy(addressSeedBytesBigEndian, 0, tmp, 2 + addressParamBytes.Length, addressSeedBytesBigEndian.Length);
+
+            // Compute Blake2b hash
+            var blake2bHash = new HMACBlake2B(32);
+            blake2bHash.Initialize();
+            byte[] hash = blake2bHash.ComputeHash(tmp);
+
+            //// Convert to hex and normalize
+            Accounts.AccountAddress address = new Accounts.AccountAddress(hash);
+
+            return address;
         }
     }
 }
