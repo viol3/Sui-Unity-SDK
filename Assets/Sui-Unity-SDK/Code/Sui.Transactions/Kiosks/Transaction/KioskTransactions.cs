@@ -1,4 +1,29 @@
-﻿using OpenDive.BCS;
+﻿//
+//  KioskTransactions.cs
+//  Sui-Unity-SDK
+//
+//  Copyright (c) 2024 OpenDive
+//
+//  Permission is hereby granted, free of charge, to any person obtaining a copy
+//  of this software and associated documentation files (the "Software"), to deal
+//  in the Software without restriction, including without limitation the rights
+//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//  copies of the Software, and to permit persons to whom the Software is
+//  furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in
+//  all copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+//  THE SOFTWARE.
+//
+
+using OpenDive.BCS;
 using Sui.Accounts;
 using Sui.Transactions;
 using Sui.Types;
@@ -256,6 +281,146 @@ namespace Sui.Kiosks.Transaction
                     tx.AddObjectInput(kioskCap),
                     tx.AddObjectInput(item),
                     tx.AddPure(new U64(price))
+                }
+            );
+        }
+
+        /// <summary>
+        /// Call the `kiosk::purchase<T>(Kiosk, ID, Coin<SUI>)` function and receive an Item and
+        /// a TransferRequest which needs to be dealt with (via a matching TransferPolicy).
+        /// </summary>
+        /// <param name="tx">The transaction to append the purchase move call.</param>
+        /// <param name="itemType">The type of item being purchased and received.</param>
+        /// <param name="kiosk">The kiosk sending the purchased item.</param>
+        /// <param name="itemId">The Object ID of the purchased item.</param>
+        /// <param name="payment">The type of coin being used to purchase the item.</param>
+        /// <returns>A tuple representing the item and transfer request.</returns>
+        public static (TransactionObjectArgument, TransactionObjectArgument) Purchase
+        (
+            ref TransactionBlock tx,
+            string itemType,
+            IObjectArgument kiosk,
+            string itemId,
+            IObjectArgument payment
+        )
+        {
+            List<TransactionArgument> purchaseReturnValues = tx.AddMoveCallTx
+            (
+                target: SuiMoveNormalizedStructType.FromStr($"{KioskConstants.KioskModule}::purchase"),
+                type_arguments: new SerializableTypeTag[] { new SerializableTypeTag(itemType) },
+                arguments: new TransactionArgument[]
+                {
+                    tx.AddObjectInput(kiosk),
+                    tx.AddPure(new AccountAddress(itemId)),
+                    tx.AddObjectInput(payment),
+                },
+                return_value_count: 2
+            );
+            return
+            (
+                new TransactionObjectArgument(purchaseReturnValues[0]),
+                new TransactionObjectArgument(purchaseReturnValues[1])
+            );
+        }
+
+        /// <summary>
+        /// Call the `kiosk::withdraw(Kiosk, KioskOwnerCap, Option<u64>)` function and receive a Coin<SUI>.
+        /// If the amount is null, then the entire balance will be withdrawn.
+        /// </summary>
+        /// <param name="tx">The transaction to append the withdraw from kiosk move call.</param>
+        /// <param name="kiosk">The kiosk being withdrawn from.</param>
+        /// <param name="kioskCap">The purchase cap for the withdrawn kiosk.</param>
+        /// <param name="amount">The amount to withdraw.</param>
+        /// <returns>The type of coin withdrawn.</returns>
+        public static TransactionObjectArgument WithdrawFromKiosk
+        (
+            ref TransactionBlock tx,
+            IObjectArgument kiosk,
+            IObjectArgument kioskCap,
+            ulong? amount = null
+        )
+        {
+            Serialization amountArg = amount != null ?
+                (new Serialization()).SerializeU64((ulong)amount) :
+                (new Serialization()).SerializeU8(0);
+
+            TransactionArgument coin = tx.AddMoveCallTx
+            (
+                target: SuiMoveNormalizedStructType.FromStr($"{KioskConstants.KioskModule}::withdraw"),
+                arguments: new TransactionArgument[]
+                {
+                    tx.AddObjectInput(kiosk),
+                    tx.AddObjectInput(kioskCap),
+                    tx.AddPure(amountArg.GetBytes())
+                }
+            )[0];
+
+            return new TransactionObjectArgument(coin);
+        }
+
+        /// <summary>
+        /// Call the `kiosk::borrow_value<T>(Kiosk, KioskOwnerCap, ID): T` function.
+        /// Immutably borrow an item from the Kiosk and return it in the end.
+        ///
+        /// Requires calling `returnValue` to return the item.
+        /// </summary>
+        /// <param name="tx">The transaction to append the borrow value move call.</param>
+        /// <param name="itemType">The type of item to borrow its value from.</param>
+        /// <param name="kiosk">The kiosk that owns the borrowed item.</param>
+        /// <param name="kioskCap">The kiosk cap for the kiosk with the borrowed item.</param>
+        /// <param name="itemId">The Object ID of the borrowed item.</param>
+        /// <returns>A tuple representing the item and the promise.</returns>
+        public static (TransactionArgument, TransactionArgument) BorrowValue
+        (
+            ref TransactionBlock tx,
+            string itemType,
+            IObjectArgument kiosk,
+            IObjectArgument kioskCap,
+            string itemId
+        )
+        {
+            List<TransactionArgument> item = tx.AddMoveCallTx
+            (
+                target: SuiMoveNormalizedStructType.FromStr($"{KioskConstants.KioskModule}::borrow_val"),
+                type_arguments: new SerializableTypeTag[] { new SerializableTypeTag(itemType) },
+                arguments: new TransactionArgument[]
+                {
+                    tx.AddObjectInput(kiosk),
+                    tx.AddObjectInput(kioskCap),
+                    tx.AddPure(new AccountAddress(itemId))
+                }
+            );
+
+            return (item[0], item[1]);
+        }
+
+        /// <summary>
+        /// Call the `kiosk::return_value<T>(Kiosk, Item, Borrow)` function.
+        /// Return an item to the Kiosk after it was `borrowValue`-d.
+        /// </summary>
+        /// <param name="tx">The transaction to append the return value move call.</param>
+        /// <param name="itemType">The type of borrowed item being returned.</param>
+        /// <param name="kiosk">The kiosk to return the item to.</param>
+        /// <param name="item">The borrowed item.</param>
+        /// <param name="promise">The promise for the item.</param>
+        public static void ReturnValue
+        (
+            ref TransactionBlock tx,
+            string itemType,
+            IObjectArgument kiosk,
+            TransactionArgument item,
+            TransactionArgument promise
+        )
+        {
+            tx.AddMoveCallTx
+            (
+                target: SuiMoveNormalizedStructType.FromStr($"{KioskConstants.KioskModule}::return_val"),
+                type_arguments: new SerializableTypeTag[] { new SerializableTypeTag(itemType) },
+                arguments: new TransactionArgument[]
+                {
+                    tx.AddObjectInput(kiosk),
+                    item,
+                    promise
                 }
             );
         }
