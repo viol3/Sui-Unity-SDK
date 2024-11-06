@@ -65,8 +65,8 @@ namespace Sui.Kiosks.Transaction
             ref TransactionBlock tx
         )
         {
-            (TransactionObjectArgument, TransactionObjectArgument) kioskResult = KioskTransactions.CreateKiosk(ref tx);
-            KioskTransactions.ShareKiosk(ref tx, kioskResult.Item1.Argument);
+            (TransactionObjectArgument, TransactionObjectArgument) kioskResult = CreateKiosk(ref tx);
+            ShareKiosk(ref tx, kioskResult.Item1.Argument);
             return kioskResult.Item2;
         }
 
