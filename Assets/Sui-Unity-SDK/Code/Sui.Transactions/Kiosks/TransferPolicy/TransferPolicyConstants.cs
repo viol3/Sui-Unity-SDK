@@ -23,7 +23,7 @@
 //  THE SOFTWARE.
 //
 
-namespace Sui.Kiosks.TransferPolicy.Types
+namespace Sui.Kiosks.TransferPolicy
 {
     public class TransferPolicyConstants
     {

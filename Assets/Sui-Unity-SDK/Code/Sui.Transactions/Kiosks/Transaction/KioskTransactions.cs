@@ -388,7 +388,8 @@ namespace Sui.Kiosks.Transaction
                     tx.AddObjectInput(kiosk),
                     tx.AddObjectInput(kioskCap),
                     tx.AddPure(new AccountAddress(itemId))
-                }
+                },
+                return_value_count: 2
             );
 
             return (item[0], item[1]);
