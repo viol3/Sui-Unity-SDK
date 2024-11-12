@@ -23,6 +23,8 @@
 //  THE SOFTWARE.
 //
 
+using System.Collections.Generic;
+
 namespace Sui.Kiosks.Kiosk.Types
 {
     /// <summary>
@@ -30,29 +32,29 @@ namespace Sui.Kiosks.Kiosk.Types
     /// </summary>
     public class KioskData
     {
-        public KioskItem[] Items { get; set; }
+        public List<KioskItem> Items { get; set; }
 
-        public string[] ItemIDs { get; set; }
+        public List<string> ItemIDs { get; set; }
 
-        public string[] ListingIDs { get; set; }
+        public List<string> ListingIDs { get; set; }
 
         public Kiosk Kiosk { get; set; }
 
-        public KioskExtensionOverview[] Extensions { get; set; }
+        public List<KioskExtensionOverview> Extensions { get; set; }
 
         public KioskData
         (
-            KioskItem[] Items,
-            string[] ItemIDs,
-            string[] ListingIDs,
-            KioskExtensionOverview[] Extensions,
+            List<KioskItem> Items = null,
+            List<string> ItemIDs = null,
+            List<string> ListingIDs = null,
+            List<KioskExtensionOverview> Extensions = null,
             Kiosk Kiosk = null
         )
         {
-            this.Items = Items;
-            this.ItemIDs = ItemIDs;
-            this.ListingIDs = ListingIDs;
-            this.Extensions = Extensions;
+            this.Items = Items ?? new List<KioskItem>();
+            this.ItemIDs = ItemIDs ?? new List<string>();
+            this.ListingIDs = ListingIDs ?? new List<string>();
+            this.Extensions = Extensions ?? new List<KioskExtensionOverview>();
             this.Kiosk = Kiosk;
         }
     }
