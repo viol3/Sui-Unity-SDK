@@ -1,5 +1,5 @@
 ﻿//
-//  KioskRulesEnvironment.cs
+//  KioskNetworkType.cs
 //  Sui-Unity-SDK
 //
 //  Copyright (c) 2024 OpenDive
@@ -25,11 +25,10 @@
 
 namespace Sui.Kiosks.Environment
 {
-    public enum KioskRulesEnvironment
+    public enum KioskNetworkType
     {
         Mainnet,
         Testnet,
-        Devnet,
         Custom
     }
 }

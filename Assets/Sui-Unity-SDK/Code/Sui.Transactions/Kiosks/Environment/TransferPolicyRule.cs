@@ -1,5 +1,5 @@
 ﻿//
-//  RulesEnvironmentParam.cs
+//  TransferPolicyRule.cs
 //  Sui-Unity-SDK
 //
 //  Copyright (c) 2024 OpenDive
@@ -23,39 +23,36 @@
 //  THE SOFTWARE.
 //
 
+using Sui.Kiosks.TransferPolicy.Types;
+using Sui.Transactions;
+
 namespace Sui.Kiosks.Environment
 {
-    public class RulesEnvironmentParam
+    public delegate RuleExecutionResult<IObjectArgument>
+        ResolveRuleDelegate(ref RulesResolvingParams parameters);
+
+    public class TransferPolicyRule
     {
-        public KioskRulesEnvironment Environment { get; set; }
+        public string Rule { get; set; }
 
-        public string Address { get; set; }
+        public string PackageID { get; set; }
 
-        public RulesEnvironmentParam
+        public ResolveRuleDelegate ResolveRuleFunction { get; set; }
+
+        public bool? HasLockingRule { get; set; }
+
+        public TransferPolicyRule
         (
-            KioskRulesEnvironment environment,
-            string address
+            string rule,
+            string packageId,
+            ResolveRuleDelegate resolveRuleFunction,
+            bool? hasLockingRule = null
         )
         {
-            this.Environment = environment;
-            this.Address = address;
+            this.Rule = rule;
+            this.PackageID = packageId;
+            this.ResolveRuleFunction = resolveRuleFunction;
+            this.HasLockingRule = hasLockingRule;
         }
-
-        public static RulesEnvironmentParam Testnet()
-            => new RulesEnvironmentParam
-               (
-                   KioskRulesEnvironment.Testnet,
-                   "0xbd8fc1947cf119350184107a3087e2dc27efefa0dd82e25a1f699069fe81a585"
-               );
-
-        public static RulesEnvironmentParam Mainnet()
-            => new RulesEnvironmentParam
-               (
-                   KioskRulesEnvironment.Mainnet,
-                   "0x434b5bd8f6a7b05fede0ff46c6e511d71ea326ed38056e3bcd681d2d7c2a7879"
-               );
-
-        public static RulesEnvironmentParam Custom(string address)
-            => new RulesEnvironmentParam(KioskRulesEnvironment.Custom, address);
     }
 }

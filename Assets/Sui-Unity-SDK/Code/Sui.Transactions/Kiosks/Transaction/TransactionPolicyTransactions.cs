@@ -178,11 +178,11 @@ namespace Sui.Kiosks.Transaction
         /// from the transfer policy's ruleset.
         /// </summary>
         /// <param name="tx">The transaction to append the remove rule move call.</param>
-        /// <param name="itemType"></param>
-        /// <param name="ruleType"></param>
-        /// <param name="configType"></param>
-        /// <param name="policy"></param>
-        /// <param name="policyCap"></param>
+        /// <param name="itemType">The type of item having its rule removed from.</param>
+        /// <param name="ruleType">The type of rule being removed.</param>
+        /// <param name="configType">The configuration type for the item.</param>
+        /// <param name="policy">The policy having its rule removed from.</param>
+        /// <param name="policyCap">The policy cap that owns the policy.</param>
         public static void RemoveTransferPolicyRule
         (
             ref TransactionBlock tx,
@@ -209,109 +209,6 @@ namespace Sui.Kiosks.Transaction
                 {
                     tx.AddObjectInput(policy),
                     tx.AddObjectInput(policyCap)
-                }
-            );
-        }
-
-        /// <summary>
-        /// Calculates the amount to be paid for the royalty rule to be resolved,
-        /// splits the coin to pass the exact amount,
-        /// then calls the `royalty_rule::pay` function to resolve the royalty rule.
-        /// </summary>
-        public static void ResolveRoyaltyRule
-        (
-            ref TransactionBlock tx,
-            string itemType,
-            string price,
-            IObjectArgument policyId,
-            TransactionArgument transferRequest,
-            RulesEnvironmentParam environment
-        )
-        {
-            TransactionArgument policyObj = tx.AddObjectInput(policyId);
-            TransactionArgument amount = tx.AddMoveCallTx
-            (
-                target: SuiMoveNormalizedStructType.FromStr
-                (
-                    $"{environment.Address}::royalty_rule::fee_amount"
-                ),
-                type_arguments: new SerializableTypeTag[]
-                {
-                    new SerializableTypeTag(itemType)
-                },
-                arguments: new TransactionArgument[]
-                {
-                    policyObj,
-                    tx.AddObjectInput(price)
-                }
-            )[0];
-
-            TransactionArgument feeCoin = tx.AddSplitCoinsTx
-            (
-                tx.gas,
-                new TransactionArgument[] { amount }
-            )[0];
-
-            tx.AddMoveCallTx
-            (
-                target: SuiMoveNormalizedStructType.FromStr
-                (
-                    $"{environment.Address}::royalty_rule::pay"
-                ),
-                type_arguments: new SerializableTypeTag[]
-                {
-                    new SerializableTypeTag(itemType)
-                },
-                arguments: new TransactionArgument[]
-                {
-                    policyObj,
-                    transferRequest,
-                    feeCoin
-                }
-            );
-        }
-
-        /// <summary>
-        /// Locks the item in the supplied kiosk and
-        /// proves to the `kiosk_lock` rule that the item was indeed locked,
-        /// by calling the `kiosk_lock_rule::prove` function to resolve it.
-        /// </summary>
-        public static void ResolveKioskLockRule
-        (
-            ref TransactionBlock tx,
-            string itemType,
-            TransactionArgument item,
-            IObjectArgument kiosk,
-            IObjectArgument kioskCap,
-            IObjectArgument policyId,
-            TransactionArgument transferRequest,
-            RulesEnvironmentParam environment
-        )
-        {
-            KioskTransactions.Lock
-            (
-                ref tx,
-                itemType,
-                kiosk,
-                kioskCap,
-                policy: policyId,
-                new TransactionObjectArgument(item)
-            );
-
-            tx.AddMoveCallTx
-            (
-                target: SuiMoveNormalizedStructType.FromStr
-                (
-                    $"{environment.Address}::kiosk_lock_rule::prove"
-                ),
-                type_arguments: new SerializableTypeTag[]
-                {
-                    new SerializableTypeTag(itemType)
-                },
-                arguments: new TransactionArgument[]
-                {
-                    transferRequest,
-                    tx.AddObjectInput(kiosk)
                 }
             );
         }

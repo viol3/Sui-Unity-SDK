@@ -24,6 +24,7 @@
 //
 
 using OpenDive.BCS;
+using Sui.Kiosks.Environment;
 using Sui.Kiosks.TransferPolicy.Types;
 using Sui.Transactions;
 using Sui.Types;
@@ -37,7 +38,7 @@ namespace Sui.Kiosks.Transaction.Rules
         /// A helper to resolve the royalty rule.
         /// </summary>
         /// <param name="parameters">The parameters for the function, using Transaction, PackageID, ItemType, PolicyID, and Price.</param>
-        public static void ResolveRoyaltyRule
+        public static RuleExecutionResult<IObjectArgument> ResolveRoyaltyRule
         (
              ref RulesResolvingParams parameters
         )
@@ -70,12 +71,18 @@ namespace Sui.Kiosks.Transaction.Rules
                     parameters.TransferRequest.Argument, feeCoin
                 }
             );
+
+            return new RuleExecutionResult<IObjectArgument>(null);
         }
 
-        public static SuiResult<string> ResolveKioskLockRule(ref RulesResolvingParams parameters)
+        public static RuleExecutionResult<IObjectArgument> ResolveKioskLockRule(ref RulesResolvingParams parameters)
         {
             if (parameters.Kiosk == null || parameters.KioskCap == null)
-                return new SuiResult<string>(null, new SuiError(-1, "Missing Owned Kiosk or Owned Kiosk Cap", null));
+                return new RuleExecutionResult<IObjectArgument>
+                       (
+                           null,
+                           new SuiError(-1, "Missing Owned Kiosk or Owned Kiosk Cap", null)
+                       );
 
             TransactionBlock tx = parameters.Transaction;
 
@@ -103,7 +110,7 @@ namespace Sui.Kiosks.Transaction.Rules
                 }
             );
 
-            return new SuiResult<string>(null);
+            return new RuleExecutionResult<IObjectArgument>(null);
         }
 
         /// <summary>
@@ -111,13 +118,17 @@ namespace Sui.Kiosks.Transaction.Rules
         /// </summary>
         /// <param name="parameters">The parameters for the function, using Transaction, Kiosk, TransferRequest, and PackageID.</param>
         /// <returns>If there is an error, it is passed up to handle, otherwise it returns a null result.</returns>
-        public static SuiResult<string> ResolvePersonalKioskRule
+        public static RuleExecutionResult<IObjectArgument> ResolvePersonalKioskRule
         (
             ref RulesResolvingParams parameters
         )
         {
             if (parameters.Kiosk == null)
-                return new SuiResult<string>(null, new SuiError(-1, "Missing owned Kiosk.", null));
+                return new RuleExecutionResult<IObjectArgument>
+                       (
+                           null,
+                           new SuiError(-1, "Missing owned Kiosk.", null)
+                       );
 
             // proves that the destination kiosk is personal.
             parameters.Transaction.AddMoveCallTx
@@ -131,14 +142,14 @@ namespace Sui.Kiosks.Transaction.Rules
                 }
             );
 
-            return new SuiResult<string>(null);
+            return new RuleExecutionResult<IObjectArgument>(null);
         }
 
         /// <summary>
         /// Resolves the floor price rule.
         /// </summary>
         /// <param name="parameters">The parameters for the function, using Transaction, PolicyID, TransferRequest, and PackageID.</param>
-        public static void ResolveFloorPriceRule
+        public static RuleExecutionResult<IObjectArgument> ResolveFloorPriceRule
         (
             ref RulesResolvingParams parameters
         )
@@ -154,6 +165,8 @@ namespace Sui.Kiosks.Transaction.Rules
                     parameters.TransferRequest.Argument
                 }
             );
+
+            return new RuleExecutionResult<IObjectArgument>(null);
         }
     }
 }
