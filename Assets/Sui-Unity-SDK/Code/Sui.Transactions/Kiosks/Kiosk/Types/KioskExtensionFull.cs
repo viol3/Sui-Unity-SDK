@@ -31,22 +31,22 @@ namespace Sui.Kiosks.Kiosk.Types
     /// </summary>
     public class KioskExtensionFull : IKioskExtension
     {
-        public bool IsEnabled { get; set; }
+        public bool? IsEnabled { get; set; }
 
         public string Permissions { get; set; }
 
         public string StorageID { get; set; }
 
-        public ulong StorageSize { get; set; }
+        public ulong? StorageSize { get; set; }
 
         public KioskExtensionFull
         (
             string ObjectID,
             string Type,
-            bool IsEnabled,
             string Permissions,
             string StorageID,
-            ulong StorageSize
+            bool? IsEnabled = null,
+            ulong? StorageSize = null
         ) : base(ObjectID, Type)
         {
             this.IsEnabled = IsEnabled;

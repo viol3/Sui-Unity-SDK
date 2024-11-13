@@ -57,7 +57,7 @@ namespace Sui.Kiosks.Kiosk.Types
             string ObjectID,
             bool IsPurchaseCapIssued,
             string ListingID,
-            string Price
+            string Price = null
         )
         {
             this.ObjectID = ObjectID;

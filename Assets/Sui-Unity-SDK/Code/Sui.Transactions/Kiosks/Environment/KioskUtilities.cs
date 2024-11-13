@@ -1,4 +1,29 @@
-﻿using System.Threading.Tasks;
+﻿//
+//  KioskUtilities.cs
+//  Sui-Unity-SDK
+//
+//  Copyright (c) 2024 OpenDive
+//
+//  Permission is hereby granted, free of charge, to any person obtaining a copy
+//  of this software and associated documentation files (the "Software"), to deal
+//  in the Software without restriction, including without limitation the rights
+//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//  copies of the Software, and to permit persons to whom the Software is
+//  furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in
+//  all copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+//  THE SOFTWARE.
+//
+
+using System.Threading.Tasks;
 using Sui.Rpc;
 using Sui.Rpc.Client;
 using Sui.Accounts;
@@ -230,7 +255,7 @@ namespace Sui.Kiosks.Environment
             return new RpcResult<List<DynamicFieldInfo>>(data);
         }
 
-        public static RpcResult<List<ObjectDataResponse>> GetAllObjects
+        public static async Task<RpcResult<List<ObjectDataResponse>>> GetAllObjects
         (
             SuiClient client,
             List<string> ids,
@@ -241,7 +266,7 @@ namespace Sui.Kiosks.Environment
             int limitArg = limit ?? DefaultQueryLimit;
             List<List<string>> chunks = GetChunks(ids, limitArg);
 
-            List<Task<List<ObjectDataResponse>>> resultsTasks = chunks.Select(async (chunk) =>
+            IEnumerable<List<ObjectDataResponse>> resultsTasks = await Utilities.AsyncClass.SelectAsync(chunks, async (chunk) =>
             {
                 List<AccountAddress> chunk_accounts = chunk.Select((account) =>
                     AccountAddress.FromHex(account)
@@ -252,15 +277,11 @@ namespace Sui.Kiosks.Environment
                     options: options
                 );
                 return res.Result.ToList();
-            }).ToList();
+            });
 
             List<ObjectDataResponse> result = new List<ObjectDataResponse>();
 
-            resultsTasks.ForEach(async (task) =>
-            {
-                List<ObjectDataResponse> res = await task;
-                result.AddRange(res);
-            });
+            resultsTasks.ToList().ForEach(task => result.AddRange(task));
 
             return new RpcResult<List<ObjectDataResponse>>(result);
         }
