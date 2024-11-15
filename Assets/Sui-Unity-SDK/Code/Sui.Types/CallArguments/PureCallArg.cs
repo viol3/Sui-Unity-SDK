@@ -24,7 +24,7 @@
 //
 
 using System.Numerics;
-using Newtonsoft.Json.Linq;
+using Unity.Plastic.Newtonsoft.Json.Linq;
 using OpenDive.BCS;
 using Sui.Accounts;
 

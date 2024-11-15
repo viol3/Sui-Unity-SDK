@@ -24,8 +24,7 @@
 //
 
 using System.Numerics;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
+using Unity.Plastic.Newtonsoft.Json;
 using Sui.Types;
 
 namespace Sui.Rpc.Models

@@ -24,7 +24,7 @@
 //
 
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using Unity.Plastic.Newtonsoft.Json;
 
 namespace Sui.Rpc.Models
 {

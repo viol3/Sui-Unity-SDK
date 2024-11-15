@@ -23,7 +23,7 @@
 //  THE SOFTWARE.
 //
 
-using Newtonsoft.Json;
+using Unity.Plastic.Newtonsoft.Json;
 using System.Numerics;
 
 namespace Sui.Rpc.Models

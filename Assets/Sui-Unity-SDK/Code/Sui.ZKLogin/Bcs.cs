@@ -1,5 +1,5 @@
 using System.Numerics;
-using Newtonsoft.Json;
+using Unity.Plastic.Newtonsoft.Json;
 using OpenDive.BCS;
 
 namespace Sui.ZKLogin

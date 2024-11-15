@@ -26,7 +26,7 @@
 using System;
 using System.Globalization;
 using System.Numerics;
-using Newtonsoft.Json.Linq;
+using Unity.Plastic.Newtonsoft.Json.Linq;
 
 namespace Sui.Utilities
 {

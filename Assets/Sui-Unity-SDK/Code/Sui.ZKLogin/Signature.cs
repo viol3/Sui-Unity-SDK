@@ -1,6 +1,6 @@
 using System;
 using System.Numerics;
-using Newtonsoft.Json;
+using Unity.Plastic.Newtonsoft.Json;
 using OpenDive.BCS;
 using Org.BouncyCastle.Asn1.Ocsp;
 using Sui.Cryptography;

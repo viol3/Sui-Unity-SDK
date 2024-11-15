@@ -25,7 +25,7 @@
 
 using Sui.Utilities;
 using OpenDive.BCS;
-using Newtonsoft.Json;
+using Unity.Plastic.Newtonsoft.Json;
 
 namespace Sui.Types
 {
