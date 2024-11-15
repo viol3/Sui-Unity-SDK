@@ -2,8 +2,7 @@ using System;
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
-using Jose;
-
+using OpenDive.Utils.Jwt;
 
 namespace Sui.ZKLogin.SDK
 {
@@ -48,7 +47,7 @@ namespace Sui.ZKLogin.SDK
         {
             LengthChecks(jwt);
 
-            var payload = JWT.Decode<JwtPayload>(jwt);
+            var payload = JwtDecoder.DecodeJwt(jwt);
             if (string.IsNullOrEmpty(payload.Sub) || string.IsNullOrEmpty(payload.Iss) || string.IsNullOrEmpty(payload.Aud))
                 throw new ArgumentException("Missing jwt data");
 
