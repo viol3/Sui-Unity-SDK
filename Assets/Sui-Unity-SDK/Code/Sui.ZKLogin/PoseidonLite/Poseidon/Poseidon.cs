@@ -47,7 +47,7 @@ namespace OpenDive.Crypto.PoseidonLite
             int nOuts = 1
         )
         {
-            var bigIntInputs = inputs.Select(i => i switch
+            BigInteger[] bigIntInputs = inputs.Select(i => i switch
             {
                 BigInteger bi => bi,
                 int n => new BigInteger(n),
@@ -73,6 +73,71 @@ namespace OpenDive.Crypto.PoseidonLite
             var mArray = (BigInteger[][])opt["M"];
 
             if ( mArray.Length != t)
+                throw new ArgumentException($"Incorrect M length, expected {t} got {mArray.Length}");
+
+            var state = new BigInteger[t];
+            state[0] = 0;
+            Array.Copy(bigIntInputs, 0, state, 1, bigIntInputs.Length);
+
+            for (int x = 0; x < nRoundsF + nRoundsP; x++)
+            {
+                for (int y = 0; y < state.Length; y++)
+                {
+                    //state[y] = (state[y] + new BigInteger(Convert.FromBase64String(cArray[x * t + y]))) % F;
+                    state[y] = (state[y] + cArray[x * t + y]) % F; // IRVIN: Assuming cArray is BigInteger already
+                    if (x < nRoundsF / 2 || x >= nRoundsF / 2 + nRoundsP)
+                        state[y] = Pow5(state[y]);
+                    else if (y == 0)
+                        state[y] = Pow5(state[y]);
+                }
+                //state = Mix(state, mArray.Select(row =>
+                //    row.Select(s => new BigInteger(Convert.FromBase64String(s))).ToArray()
+                //).ToArray());
+                state = Mix(state, mArray);
+            }
+
+            if (nOuts == 1)
+                return new[] { state[0] };
+            if (nOuts <= state.Length)
+                return state.Take(nOuts).ToArray();
+
+            throw new ArgumentException($"Invalid number of outputs requested {nOuts}, max {state.Length}");
+        }
+
+        public static BigInteger[] Hash(
+            BigInteger[] inputs,
+            //object opt,
+            Dictionary<string, object> opt,
+            int nOuts = 1
+        )
+        {
+            //var bigIntInputs = inputs.Select(i => i switch
+            //{
+            //    BigInteger bi => bi,
+            //    int n => new BigInteger(n),
+            //    string s => BigInteger.Parse(s),
+            //    _ => throw new ArgumentException($"Invalid input type: {i.GetType()}")
+            //}).ToArray();
+            BigInteger[] bigIntInputs = inputs;
+
+            if (bigIntInputs.Length <= 0)
+                throw new ArgumentException("Not enough inputs");
+            if (bigIntInputs.Length > N_ROUNDS_P.Length)
+                throw new ArgumentException("Too many inputs");
+
+            int t = bigIntInputs.Length + 1;
+            int nRoundsF = N_ROUNDS_F;
+            int nRoundsP = N_ROUNDS_P[t - 2];
+
+            // IRVIN: Access C array
+            //var cArray = (List<BigInteger>)opt["C"];
+            var cArray = (BigInteger[])opt["C"];
+
+            // IRVIN: Access M array (list of lists)
+            //var mArray = (List<List<BigInteger>>)opt["M"];
+            var mArray = (BigInteger[][])opt["M"];
+
+            if (mArray.Length != t)
                 throw new ArgumentException($"Incorrect M length, expected {t} got {mArray.Length}");
 
             var state = new BigInteger[t];

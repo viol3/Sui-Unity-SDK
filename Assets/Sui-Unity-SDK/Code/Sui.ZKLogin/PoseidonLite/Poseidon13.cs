@@ -5,23 +5,17 @@ using OpenDive.Crypto.PoseidonLite.Constants;
 
 public class Poseidon13
 {
-    private Dictionary<string, object> c13;
-    private Dictionary<string, object> c;
-
-    public Poseidon13()
+    public static BigInteger Hash(object[] inputs, int nOuts = 1)
     {
-        c13 = new Dictionary<string, object> { ["C"] = C13.C, ["M"] = C13.M };
-        c = BigIntUnstringifier.UnstringifyBigInts(c13);
+        Dictionary<string, object> c13 = new Dictionary<string, object> { ["C"] = C13.C, ["M"] = C13.M };
+        Dictionary<string, object> c = BigIntUnstringifier.UnstringifyBigInts(c13);
+        return Poseidon.Hash(inputs, c, nOuts)[0];
     }
 
-    public BigInteger[] Hash(object[] inputs, int nOuts = 1)
+    public static BigInteger Hash(BigInteger[] inputs, int nOuts = 1)
     {
-        return Poseidon.Hash(inputs, this.c, nOuts);
+        Dictionary<string, object> c13 = new Dictionary<string, object> { ["C"] = C13.C, ["M"] = C13.M };
+        Dictionary<string, object> c = BigIntUnstringifier.UnstringifyBigInts(c13);
+        return Poseidon.Hash(inputs, c, nOuts)[0];
     }
-
-    //public BigInteger[] Hash(string[] inputs, int nOuts)
-    //{
-    //    //PoseidonHash.Hash();
-    //    throw new NotSupportedException();
-    //}
 }
