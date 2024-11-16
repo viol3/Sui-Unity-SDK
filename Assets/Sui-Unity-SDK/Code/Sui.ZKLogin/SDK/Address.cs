@@ -47,7 +47,11 @@ namespace Sui.ZKLogin.SDK
         {
             LengthChecks(jwt);
 
-            var payload = JwtDecoder.DecodeJwt(jwt);
+            //var payload = JwtDecoder.DecodeJwt(jwt);
+            JWT decodedJWT = JWTDecoder.DecodeJWT(jwt);
+            JWTPayload payload = decodedJWT.Payload;
+
+
             if (string.IsNullOrEmpty(payload.Sub) || string.IsNullOrEmpty(payload.Iss) || string.IsNullOrEmpty(payload.Aud))
                 throw new ArgumentException("Missing jwt data");
 
