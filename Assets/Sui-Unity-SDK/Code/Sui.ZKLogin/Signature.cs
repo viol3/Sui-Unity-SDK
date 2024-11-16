@@ -81,7 +81,7 @@ namespace Sui.ZKLogin
             return sigBytes;
         }
 
-        public string GetZkLoginSignature(Inputs inputs, ulong maxEpoch, byte[] userSignature)
+        public static string GetZkLoginSignature(Inputs inputs, ulong maxEpoch, byte[] userSignature)
         {
             byte[] bytes = GetZkLoginSignatureBytes(inputs, maxEpoch, userSignature);
             byte[] signatureBytes = new byte[bytes.Length + 1];

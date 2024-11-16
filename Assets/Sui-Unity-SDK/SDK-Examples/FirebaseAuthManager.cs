@@ -5,9 +5,9 @@ using i5.Toolkit.Core.ServiceCore;
 using OpenDive.Utils.Jwt;
 using UnityEngine;
 using Firebase.Extensions;
-using i5.Toolkit.Core.RocketChatClient;
-using System.Net.Mail;
-using Newtonsoft.Json.Linq;
+using Sui.Cryptography.Ed25519;
+using System.Security.Cryptography;
+using System.Numerics;
 
 public class FirebaseAuthManager : MonoBehaviour
 {
@@ -104,9 +104,9 @@ public class FirebaseAuthManager : MonoBehaviour
                     return;
                 }
 
-                string idToken = task.Result;
+                string jwtIdToken = task.Result;
 
-                Debug.Log("ID TOKEN:  " + idToken);
+                Debug.Log("ID TOKEN:  " + jwtIdToken);
 
                 //JwtPayload payload = JwtDecoder.DecodeJwt(idToken);
                 //Debug.Log(payload.Aud + "  --  "
@@ -115,7 +115,7 @@ public class FirebaseAuthManager : MonoBehaviour
                 //    + payload.Iat + " --- "
                 //    + payload.Iss + " ... ");
 
-                JWT decodedJWT = JWTDecoder.DecodeJWT(idToken);
+                JWT decodedJWT = JWTDecoder.DecodeJWT(jwtIdToken);
 
                 if (decodedJWT != null)
                 {
@@ -144,6 +144,45 @@ public class FirebaseAuthManager : MonoBehaviour
 
                 // Send token to your backend via HTTPS
                 // ...
+
+                byte[] byteSalt = new byte[16]; // 16 bytes = 128 bits
+                using (var rng = RandomNumberGenerator.Create())
+                {
+                    rng.GetBytes(byteSalt); // Fill the array with secure random bytes
+                }
+
+                Debug.Log("BYTE SALT: " + byteSalt);
+
+                string strSalt = BitConverter.ToString(byteSalt);
+
+                Debug.Log("SALT STRING: " + strSalt);
+                string seed = Sui.ZKLogin.SDK.Address.JwtToAddress(jwtIdToken, strSalt);
+
+                Debug.Log("SEED: " + seed);
+
+                Sui.ZKLogin.AccountAddress accountAddress = new Sui.ZKLogin.AccountAddress();
+                //Sui.ZKLogin.AccountAddress zkLoginAddress
+                //    = accountAddress.ComputeZkLoginAddressFromSeed(seed, decodedJWT.Payload.Iss);
+
+                Debug.Log("ACCOUNT ADDRESS: " + accountAddress);
+
+                string private_key_hex = "0x99da9559e15e913ee9ab2e53e3dfad575da33b49be1125bb922e33494f498828";
+                PrivateKey ephemeralPk = new PrivateKey(private_key_hex);
+                PublicKey pubKey = (PublicKey) ephemeralPk.PublicKey();
+
+                string extPubKey = Sui.ZKLogin.SDK.Utils.GetExtendedEphemeralPublicKey(pubKey);
+
+                // GEN ADDRESS SEED:
+                BigInteger addressSeed = Sui.ZKLogin.SDK.Utils.GenAddressSeed(
+                    strSalt,
+                    "sub",
+                    decodedJWT.Payload.Sub,
+                    decodedJWT.Payload.Aud
+                );
+
+                //https://docs.sui.io/guides/developer/cryptography/zklogin-integration
+                //string zkLoginSig = Sui.ZKLogin.ZkLoginSignature.GetZkLoginSignature(
+                //);
             });
         });
     }
