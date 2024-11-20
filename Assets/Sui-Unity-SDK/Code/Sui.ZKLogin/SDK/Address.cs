@@ -6,6 +6,11 @@ using OpenDive.Utils.Jwt;
 
 namespace Sui.ZKLogin.SDK
 {
+    /// <summary>
+    /// A utility class used to compute A Sui address from the:
+    /// UserSalt, and JWT token values (ClaimName, ClaimValue, Aud, ISS).
+    /// TODO: See how this is implemented / used in ZK Login TS. Can the SDK and outer accout `address` class be reconciled?
+    /// </summary>
     public static class Address
     {
         public const int MAX_HEADER_LEN_B64 = 248;
@@ -47,10 +52,8 @@ namespace Sui.ZKLogin.SDK
         {
             LengthChecks(jwt);
 
-            //var payload = JwtDecoder.DecodeJwt(jwt);
             JWT decodedJWT = JWTDecoder.DecodeJWT(jwt);
             JWTPayload payload = decodedJWT.Payload;
-
 
             if (string.IsNullOrEmpty(payload.Sub) || string.IsNullOrEmpty(payload.Iss) || string.IsNullOrEmpty(payload.Aud))
                 throw new ArgumentException("Missing jwt data");
@@ -70,13 +73,20 @@ namespace Sui.ZKLogin.SDK
             });
         }
 
-
         public static string ComputeZkLoginAddress(ZkLoginAddressOptions options)
         {
             var seed = GenAddressSeed(options.UserSalt, options.ClaimName, options.ClaimValue, options.Aud);
             return ComputeZkLoginAddressFromSeed(seed, options.Iss);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="userSalt"></param>
+        /// <param name="claimName"></param>
+        /// <param name="claimValue"></param>
+        /// <param name="aud"></param>
+        /// <returns></returns>
         private static BigInteger GenAddressSeed(string userSalt, string claimName, string claimValue, string aud)
         {
             using var sha256 = SHA256.Create();
@@ -111,13 +121,6 @@ namespace Sui.ZKLogin.SDK
         public string ClaimName { get; set; }
         public string ClaimValue { get; set; }
         public string UserSalt { get; set; }
-        public string Iss { get; set; }
-        public string Aud { get; set; }
-    }
-
-    public class JwtPayload
-    {
-        public string Sub { get; set; }
         public string Iss { get; set; }
         public string Aud { get; set; }
     }

@@ -1,8 +1,3 @@
-using UnityEngine;
-using System;
-using System.Text;
-using System.Collections.Generic;
-
 namespace OpenDive.Utils.Jwt
 {
     using System;
@@ -10,6 +5,10 @@ namespace OpenDive.Utils.Jwt
     using UnityEngine;
     using Newtonsoft.Json;
 
+    /// <summary>
+    /// A class to decode JWT tokens.
+    /// TODO: Add unit tests
+    /// </summary>
     public class JWTDecoder
     {
         /// <summary>

@@ -4,6 +4,11 @@ using OpenDive.BCS;
 
 namespace Sui.ZKLogin
 {
+    /// <summary>
+    /// TODO: Complete implementation
+    /// TODO: See if we can just make the ZKLogin Signature class `ISerializable` to that we can just call `serialize` on it.
+    /// TODO: See why this signature looks like this" inputs, maxEpochs, userSignature
+    /// </summary>
     [JsonObject]
     public class ZkLoginSignatureBCS: ISerializable
     {

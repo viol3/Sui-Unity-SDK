@@ -5,13 +5,6 @@ using UnityEngine;
 
 namespace Sui.ZKLogin
 {
-
-    //public record Claim
-    //{
-    //    public string Value { get; init; }
-    //    public int IndexMod4 { get; init; }
-    //}
-
     /// <summary>
     /// Represents a claim with a base64URL encoded value and its position indicator
     /// </summary>
@@ -29,6 +22,9 @@ namespace Sui.ZKLogin
         public int indexMod4;
     }
 
+    /// <summary>
+    /// TODO: Add tests for JWT Utils
+    /// </summary>
     public class JwtUtils
     {
         /// <summary>
@@ -58,11 +54,6 @@ namespace Sui.ZKLogin
                 bits[i] = binaryString[i] == '1' ? 1 : 0;
             return bits;
         }
-
-        //private static int[] Base64UrlStringToBitVector(string base64UrlString)
-        //{
-        //    return base64UrlString.SelectMany(c => Base64UrlCharTo6Bits(c)).ToArray();
-        //}
 
         /// <summary>
         /// Converts a base64URL encoded string to a bit vector

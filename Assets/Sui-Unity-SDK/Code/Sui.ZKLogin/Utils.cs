@@ -1,12 +1,13 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using UnityEngine;
 
 namespace Sui.ZKLogin
 {
+    /// <summary>
+    /// Utility functions used within ZK Login implementation.
+    /// TODO: See if we have implemented this in the core Utils class. Does it make sense to move it there? (I think so).
+    /// </summary>
     public static class Utils
     {
 

@@ -24,13 +24,15 @@
 //
 
 using System;
-using Sui.Utilities;
 using System.Text;
 using Sui.Cryptography;
 using Konscious.Security.Cryptography;
 
 namespace Sui.ZKLogin
 {
+    /// <summary>
+    /// TODO: Look into where and how this is used in ZK Login TS
+    /// </summary>
     public class AccountAddress : Accounts.AccountAddress
     {
         /// <summary>
@@ -39,21 +41,18 @@ namespace Sui.ZKLogin
         /// <param name="addressSeed">The address seed as BigInteger</param>
         /// <param name="iss">The issuer string</param>
         /// <returns>Normalized Sui address string</returns>
-        public Sui.Accounts.AccountAddress ComputeZkLoginAddressFromSeed(long addressSeed, string iss)
+        public Accounts.AccountAddress ComputeZkLoginAddressFromSeed(long addressSeed, string iss)
         {
-            //TS: bytesToHex(blake2b(tmp, { dkLen: 32 })).slice(0, SUI_ADDRESS_LENGTH * 2),
-            //string hex = BitConverter.ToString(bytes);
+            // TS: bytesToHex(blake2b(tmp, { dkLen: 32 })).slice(0, SUI_ADDRESS_LENGTH * 2),
+            // string hex = BitConverter.ToString(bytes);
             byte[] addressSeedBytesBigEndian = Utils.ToBigEndianBytes(addressSeed, 32);
 
             // Normalize Google issuer
             if (iss == "accounts.google.com")
-            {
-                iss = "https://accounts.google.com";
-            }
+                iss = "https://accounts.google.com"; //TODO: See / ask about implementation for OAuth providers
 
             byte[] addressParamBytes = Encoding.UTF8.GetBytes(iss);
             byte[] tmp = new byte[2 + addressSeedBytesBigEndian.Length + addressParamBytes.Length];
-
 
             // Set signature scheme flag
             tmp[0] = SignatureSchemeToFlag.ZkLogin;

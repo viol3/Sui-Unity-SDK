@@ -27,7 +27,6 @@ namespace Sui.ZKLogin.SDK
             Poseidon16.Hash,
         };
 
-
         /// <summary>
         /// Runs Poseidon Hash.
         /// The inputs can either be a int, long, or string array.

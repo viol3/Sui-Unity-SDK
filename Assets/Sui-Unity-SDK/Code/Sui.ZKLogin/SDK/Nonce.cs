@@ -5,6 +5,10 @@ using Sui.Cryptography.Ed25519;
 
 namespace Sui.ZKLogin.SDK
 {
+    /// <summary>
+    /// TODO: See if there are any issues with using RNGCryptoServiceProvider on mobile or WebGL
+    /// TODO: See how TS implements this. Perhaps we can use a difference source of randomness.
+    /// </summary>
     public static class NonceGenerator
     {
         public const int NONCE_LENGTH = 27;
@@ -22,7 +26,7 @@ namespace Sui.ZKLogin.SDK
         public static string GenerateRandomness()
         {
             byte[] randomBytes = new byte[16];
-            // IRVIN: See the impact of using this. TypeScript uses `noble/hashes`
+            // TODO: See the impact of using this. TypeScript uses `noble/hashes`
             using (var rng = new RNGCryptoServiceProvider())
             {
                 rng.GetBytes(randomBytes);
@@ -57,9 +61,7 @@ namespace Sui.ZKLogin.SDK
             string nonce = Base64UrlEncode(Z);
 
             if (nonce.Length != NONCE_LENGTH)
-            {
                 throw new Exception($"Length of nonce {nonce} ({nonce.Length}) is not equal to {NONCE_LENGTH}");
-            }
 
             return nonce;
         }
@@ -71,9 +73,7 @@ namespace Sui.ZKLogin.SDK
             Array.Reverse(bytes); // Convert to big-endian
 
             if (bytes.Length > length)
-            {
                 throw new ArgumentException($"Value too large for {length} bytes");
-            }
 
             byte[] paddedBytes = new byte[length];
             Array.Copy(bytes, 0, paddedBytes, length - bytes.Length, bytes.Length);

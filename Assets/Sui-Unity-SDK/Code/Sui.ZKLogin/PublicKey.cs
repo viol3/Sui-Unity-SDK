@@ -1,14 +1,16 @@
-
 namespace Sui.ZKLogin.SDK
 {
     using System;
     using System.Text;
     using System.Numerics;
     using System.Threading.Tasks;
-    using UnityEngine;
     using Sui.Cryptography;
     using Sui.Cryptography.Ed25519;
 
+    /// <summary>
+    /// TODO: Implement ZKLoginPublicKey.
+    /// TODO: See how this is used and whether it can just be extended from the core PublicKey cass
+    /// </summary>
     public class ZkLoginPublicKey : PublicKey
     {
         public ZkLoginPublicKey(byte[] public_key) : base(public_key)
