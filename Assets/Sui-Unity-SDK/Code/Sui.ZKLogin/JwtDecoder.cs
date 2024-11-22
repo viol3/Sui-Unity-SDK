@@ -4,6 +4,7 @@ namespace OpenDive.Utils.Jwt
     using System.Text;
     using UnityEngine;
     using Newtonsoft.Json;
+    using System.Collections.Generic;
 
     /// <summary>
     /// A class to decode JWT tokens.
@@ -57,6 +58,58 @@ namespace OpenDive.Utils.Jwt
         }
 
         /// <summary>
+        /// Utility class to decode non-required claims.
+        /// </summary>
+        /// <param name="json">The JWT token string</param>
+        /// <param name="claims">Parsed claims</param>
+        private static void ParseCustomClaims(string json, Dictionary<string, string> claims)
+        {
+            // Simple JSON parsing for claims
+            // Remove the first and last curly braces and split by commas
+            json = json.Trim('{', '}');
+            string[] pairs = json.Split(',');
+
+            foreach (string pair in pairs)
+            {
+                try
+                {
+                    string[] keyValue = pair.Split(':');
+                    if (keyValue.Length == 2)
+                    {
+                        string key = keyValue[0].Trim('"', ' ');
+                        string value = keyValue[1].Trim('"', ' ');
+
+                        // Skip standard claims
+                        if (!IsStandardClaim(key))
+                        {
+                            claims[key] = value;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"Failed to parse claim pair: {pair}. Error: {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Utility class to check against standard claims.
+        /// </summary>
+        /// <param name="claimName"></param>
+        /// <returns></returns>
+        private static bool IsStandardClaim(string claimName)
+        {
+            return claimName == "iss" ||
+                   claimName == "sub" ||
+                   claimName == "aud" ||
+                   claimName == "exp" ||
+                   claimName == "nbf" ||
+                   claimName == "iat" ||
+                   claimName == "jti";
+        }
+
+        /// <summary>
         /// Decodes a Base64 URL-encoded string.
         /// </summary>
         /// <param name="base64Url">The Base64 URL-encoded string</param>
@@ -80,8 +133,46 @@ namespace OpenDive.Utils.Jwt
     /// </summary>
     public class JWT
     {
+        /// <summary>
+        /// The JOSE (JSON Object Signing and Encryption) Header is comprised
+        /// of a set of Header Parameters that typically consist of a name/value pair:
+        /// the hashing algorithm being used (e.g., HMAC SHA256 or RSA) and the type of the JWT.
+        /// </summary>
         public JWTHeader Header { get; set; }
+        /// <summary>
+        /// JWS payload (set of claims): contains verifiable security statements.
+        /// These are statements about an entity (typically, the user) and additional data.
+        /// There are three types of claims: registered, public, and private claims.
+        ///
+        /// Registered claims: These are a set of predefined claims which are
+        /// not mandatory but recommended, to provide a set of useful, interoperable claims.
+        /// Some of them are: iss (issuer), exp (expiration time), sub (subject), aud (audience), and others.
+        ///
+        /// Public claims: These can be defined at will by those using JWTs.
+        /// But to avoid collisions they should be defined in the IANA JSON Web Token Registry
+        /// or be defined as a URI that contains a collision resistant namespace.
+        ///
+        /// Private claims: These are the custom claims created to share
+        /// information between parties that agree on using them and are
+        /// neither registered or public claims.
+        /// </summary>
         public JWTPayload Payload { get; set; }
+        /// <summary>
+        /// The signature is used to verify that the sender of the JWT is who
+        /// it says it is and to ensure that the message wasn't changed along the way.
+        /// To create the signature, the Base64-encoded header and payload are taken,
+        /// along with a secret, and signed with the algorithm specified in the header.
+        /// 
+        /// When you use a JWT, you must check its signature before storing and using it.
+        ///
+        /// For example, if you are creating a signature for a token using the
+        /// HMAC SHA256 algorithm, you would do the following:
+        /// <code>HMACSHA256(
+        ///     base64UrlEncode(header) + "." +
+        ///     base64UrlEncode(payload),
+        ///     secret)
+        /// </code>
+        /// </summary>
         public string Signature { get; set; }
     }
 
@@ -90,8 +181,9 @@ namespace OpenDive.Utils.Jwt
     /// </summary>
     public class JWTHeader
     {
-        public string alg { get; set; } // Algorithm
-        public string typ { get; set; } // Token type
+        public string alg { get; set; } // * Algorithm. Required for ZK Login.
+        public string typ { get; set; } // * Token type. Required for ZK Login.
+        public string kid { get; set; } // * The kid value indicates what key was used to sign the JWT. Required for ZK Login.
     }
 
     /// <summary>
@@ -99,16 +191,22 @@ namespace OpenDive.Utils.Jwt
     /// </summary>
     public class JWTPayload
     {
-        public string Iss { get; set; } // Issuer
-        public string Sub { get; set; } // Subject
-        public string Aud { get; set; } // Audience
-        public long? Auth_time { get; set; } // Authentication time (Unix timestamp)
-        public long? Iat { get; set; } // Issued at (Unix timestamp)
-        public long? Exp { get; set; } // Expiration time (Unix timestamp)
-        public string Email { get; set; } // Email address
-        public string Name { get; set; } // Name
-        public string Jti { get; set; } // JWT ID (unique identifier for the token)
+        // <> Registered claims </>
+        public string Iss { get; set; } // * Issuer of the JWT. Required for ZK Login.
+        public string Sub { get; set; } // * Subject of the JWT (the user). Required for ZK Login.
+        public string Aud { get; set; } // Recipient for which the JWT is intended
+        public long? Exp { get; set; }  // Time after which the JWT expires
+        public long? Nbf { get; set; }  // Time before which the JWT must not be accepted for processing (Unix timestamp)
+        public long? Iat { get; set; }  // Issued at .. Time at which the JWT was issued; can be used to determine age of the JWT (Unix timestamp)
+        public string Jti { get; set; } // JWT ID (unique identifier for the token). Can be used to prevent the JWT from being replayed (allows a token to be used only once)
 
+        // <> Public claims </>
+        public long? Auth_time { get; set; } // Authentication time (Unix timestamp)
+        public string Nonce { get; set; }    // * Required for ZK Login. Used instead of `iat` and `exp`.
+
+        // <> Custom claims </>
+        public string Email { get; set; }    // Email address
+        public string Name { get; set; }     // Name
         // Add additional properties as needed based on your JWT structure.
     }
 
