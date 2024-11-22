@@ -59,6 +59,14 @@ We envision a tool that not only provides the flexibility and customization for 
 - [x] Local Transaction Building.
 - [x] Local, custom, dev, test, and main net compatibility.
 - [x] Comprehensive Unit and Integration Test coverage.
+- [x] [ZK Login](https://docs.sui.io/concepts/cryptography/zklogin)
+
+### On ZK Login
+
+>  zkLogin is a two-factor authentication scheme; sending a transaction requires both a credential from a recent OAuth login and a salt not managed by the OAuth provider. An attacker who compromises an OAuth account cannot transact from the user's corresponding Sui address unless they separately compromise the salt.
+
+> zkLogin is one of several native Sui signature schemes thanks to Sui's cryptography agility. It integrates with other Sui primitives, like sponsored transactions and multisig.
+
 
 ### Make Account Transfer Quickly and Easily! ###
 
