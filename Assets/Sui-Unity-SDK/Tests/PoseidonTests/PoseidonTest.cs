@@ -102,6 +102,65 @@ namespace Sui.Tests.PoseidonHash
             Assert.AreEqual(expectedOuputBigInt, actual, "ACTUAL: " + actual.ToString());
         }
 
+        [Test]
+        public void PoseidonHash7Test()
+        {
+            BigInteger[] bigIntArrInput = {
+                BigInteger.Parse("0e483",                   System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("006080a36f1",             System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("06c50",                   System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("06f3ffad52d91ffbaccde",   System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("07073e0c4",               System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("0c6569f88",               System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("00abf7cc128",             System.Globalization.NumberStyles.HexNumber)
+            };
+
+            BigInteger expectedOuputBigInt = BigInteger.Parse("18883844781657687536511490093240957793997696769902810748263588204588181956695");
+
+            BigInteger actual = Poseidon7.Hash(bigIntArrInput);
+            Assert.AreEqual(expectedOuputBigInt, actual, "ACTUAL: " + actual.ToString());
+        }
+
+        [Test]
+        public void PoseidonHash8Test()
+        {
+            BigInteger[] bigIntArrInput = {
+                BigInteger.Parse("067b4",                   System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("02557de9b6b",             System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("0d5d64a1c17f707328a",     System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("0941b0a016bfe",           System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("092825b69",               System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("007cc",                   System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("064",                     System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("099",                     System.Globalization.NumberStyles.HexNumber)
+            };
+
+            BigInteger expectedOuputBigInt = BigInteger.Parse("10143860969547922827253848297127318079710852163153966500688330829827496701236");
+
+            BigInteger actual = Poseidon8.Hash(bigIntArrInput);
+            Assert.AreEqual(expectedOuputBigInt, actual, "ACTUAL: " + actual.ToString());
+        }
+
+        [Test]
+        public void PoseidonHash9Test()
+        {
+            BigInteger[] bigIntArrInput = {
+                BigInteger.Parse("06d4bf06ab0663290faf0",   System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("0faf495b0",               System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("02d",                     System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("06b7a5359f50986c1c7d6",   System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("0e36e57",                 System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("0d9a4b9d1536e6673",       System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("0b405c6ffeb",             System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("0b7",                     System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("0b51d56",                 System.Globalization.NumberStyles.HexNumber)
+            };
+
+            BigInteger expectedOuputBigInt = BigInteger.Parse("16731762789090838755987643190727158951458237596073457316914485312399930282313");
+
+            BigInteger actual = Poseidon9.Hash(bigIntArrInput);
+            Assert.AreEqual(expectedOuputBigInt, actual, "ACTUAL: " + actual.ToString());
+        }
 
         [Test]
         public void PoseidonHash16Test()
