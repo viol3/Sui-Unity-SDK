@@ -1486,6 +1486,7 @@ namespace OpenDive.Crypto.PoseidonLite.Constants
             },
             new string[]
             {
+                "DmkfykIxKKfUr8qlgrGpR5m6H10qXVO8K7pWu+yyJ6E=",
                 "GAqkur+nU5dT2cIi5eM1mspZ4Gu+/Hzzo/+k+WH6HVs=",
                 "LFQofu42jV1S37BoKC1o5rCbdr0bXJMzs2hIrCd3RPU=",
                 "L2U2GkrtMg/NA6RcRN2nQCE1cfOXXOILlr/9lgy8biU=",
