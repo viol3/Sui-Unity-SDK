@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
 namespace OpenDive.Crypto.PoseidonLite.Constants
 {
     public class C6
