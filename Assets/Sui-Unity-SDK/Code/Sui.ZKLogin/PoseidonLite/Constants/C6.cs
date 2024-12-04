@@ -561,6 +561,7 @@ namespace OpenDive.Crypto.PoseidonLite.Constants
             },
             new string[]
             {
+                "IU5BeIvSuZA0fH8qj0dhLU386xoebaOBZYc99mzlH1k=",
                 "A/uoLT94NiCHPalOn06EyLUp129U5LXX1IBScq+bl3U=",
                 "BmeC/j6GneLOvX679g+0NXhTKd+xKtm9G05G7TYolRE=",
                 "HFzWsj7zNr4B76N6J+a3quXRZD/O6yEs3/UViINftTc=",

@@ -68,6 +68,42 @@ namespace Sui.Tests.PoseidonHash
         }
 
         [Test]
+        public void PoseidonHash5Test()
+        {
+            BigInteger[] bigIntArrInput = {
+                BigInteger.Parse("0119cc70bda751b46214b",   System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("0d5ebd4812a",             System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("06cdf678ca608fc",         System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("0819643836601fc501172",   System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("0fb9507a26a",             System.Globalization.NumberStyles.HexNumber)
+            };
+
+            BigInteger expectedOuputBigInt = BigInteger.Parse("475355438621302339608817371644128544331343530654767674429160180520836681578");
+
+            BigInteger actual = Poseidon5.Hash(bigIntArrInput);
+            Assert.AreEqual(expectedOuputBigInt, actual, "ACTUAL: " + actual.ToString());
+        }
+
+        [Test]
+        public void PoseidonHash6Test()
+        {
+            BigInteger[] bigIntArrInput = {
+                BigInteger.Parse("0873e8fdae701b8",         System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("0bb4bf78a3ecb46d436e7",   System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("0cf627275bfe27e1869",     System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("00ddd89",                 System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("079910b8008",             System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("0fc04af87e25434",         System.Globalization.NumberStyles.HexNumber)
+            };
+
+            BigInteger expectedOuputBigInt = BigInteger.Parse("19515825097958319939544949050353165672719977680261864201249067521141962147653");
+
+            BigInteger actual = Poseidon6.Hash(bigIntArrInput);
+            Assert.AreEqual(expectedOuputBigInt, actual, "ACTUAL: " + actual.ToString());
+        }
+
+
+        [Test]
         public void PoseidonHash16Test()
         {
             BigInteger[] bigIntArrInput = {
@@ -86,10 +122,10 @@ namespace Sui.Tests.PoseidonHash
                 BigInteger.Parse("00deadf",                 System.Globalization.NumberStyles.HexNumber),
                 BigInteger.Parse("061ddd0",                 System.Globalization.NumberStyles.HexNumber),
 
-                BigInteger.Parse("0b8a2bf",                System.Globalization.NumberStyles.HexNumber),
-                BigInteger.Parse("090c5ecdef4608ca30b",    System.Globalization.NumberStyles.HexNumber),
-                BigInteger.Parse("0b95b1bd9acb3514905",    System.Globalization.NumberStyles.HexNumber),
-                BigInteger.Parse("0d8c05c11d4fc9451",      System.Globalization.NumberStyles.HexNumber)
+                BigInteger.Parse("0b8a2bf",                 System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("090c5ecdef4608ca30b",     System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("0b95b1bd9acb3514905",     System.Globalization.NumberStyles.HexNumber),
+                BigInteger.Parse("0d8c05c11d4fc9451",       System.Globalization.NumberStyles.HexNumber)
             };
 
             BigInteger expectedOuputBigInt = BigInteger.Parse("17659853214326367823052875610415715805694234135492096018138758656568336777027");
