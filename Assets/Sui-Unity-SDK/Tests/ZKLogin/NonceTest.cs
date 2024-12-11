@@ -1,3 +1,4 @@
+using System;
 using System.Numerics;
 using NUnit.Framework;
 using Sui.Cryptography.Ed25519;
@@ -45,9 +46,10 @@ namespace Sui.Tests.ZkLogin
         [Test]
         public void ToBigIntBETest()
         {
-            byte[] bytes = { };
-            BigInteger toBigintBE = NonceGenerator.ToBigIntBE(bytes);
-            Assert.AreEqual(null, bytes, "BigInteger Valye: " + "[IMPLEMENT]");
+            //byte[] bytes = { };
+            //BigInteger toBigintBE = NonceGenerator.ToBigIntBE(bytes);
+            //Assert.AreEqual(null, bytes, "BigInteger Valye: " + "[IMPLEMENT]");
+            throw new NotImplementedException();
         }
     }
 }
