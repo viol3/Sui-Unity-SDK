@@ -10,13 +10,20 @@ namespace Sui.Tests.ZkLogin
     [TestFixture]
     public class NonceTest : MonoBehaviour
     {
-        int maxEpoch = 26;
-        string pkBase64 = "lHezoWY/4pRWe+iajFHw62hQjmVQ6wlL+C8CJxw4bY0=";
-        string pubKeyBase64Expected = "/CTTrykDrvNxtl0WfBo3Q+H/L9VLJAzwXAJew6cMP70=";
+        //int maxEpoch = 26;
+        //string pkBase64 = "lHezoWY/4pRWe+iajFHw62hQjmVQ6wlL+C8CJxw4bY0=";
+        //string pubKeyBase64Expected = "/CTTrykDrvNxtl0WfBo3Q+H/L9VLJAzwXAJew6cMP70=";
+
+        int maxEpoch = 0;
+        string pkBase64 = "suiprivkey1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq509duq";
+        string pubKeyBase64Expected = "O2onvM62pC1io6jQKm8Nc2UyFXcd4kOmOsBIoYtZ2ik=";
 
         //BigInteger randomness = 91593735651025872471886891147594672981; // too long
         //BigInteger randomness = 9159373565102587247;
-        BigInteger randomness = BigInteger.Parse("91593735651025872471886891147594672981");
+        //BigInteger randomness = BigInteger.Parse("915937356510258724");
+        BigInteger randomness = new BigInteger(91593735651025872);
+
+        string rand = "47012194554876445839229943898159241998";
 
         /// <summary>
         /// PrivateKey:
@@ -27,8 +34,11 @@ namespace Sui.Tests.ZkLogin
         [Test]
         public void GenerateNonceTest()
         {
-            PrivateKey pk = new PrivateKey(pkBase64);
+            PrivateKey pk = new PrivateKey(new byte[32]);
+            Debug.Log("SUI PRIVATE KEY: " + pk.KeyBase64);
+            Debug.Log("SUI PRIVATE KEY: " + pk.KeyHex);
             string pubKey = pk.PublicKey().KeyBase64;
+            Debug.Log("SUI PUB KEY: " + pubKey);
 
             Assert.AreEqual(pubKeyBase64Expected, pubKey);
 
@@ -38,17 +48,104 @@ namespace Sui.Tests.ZkLogin
                 randomness
             );
 
-            string nonceExpected = "LSLuhEjHLSeRvyI26wfPQSjYNbc";
+            //string nonceExpected = "LSLuhEjHLSeRvyI26wfPQSjYNbc";
+            //string nonceExpected = "pFPQCGSS83mj48FUm_QTj0rHOHU";
+            string nonceExpected = "SoeqFjFH8qNU8t4z1oh2aWp1jJI"; 
             Debug.Log("RAND: LOG: " + randomness);
+
+            BigInteger a = BigInteger.Parse("47012194554876445839229943898159241998");
+            Debug.Log(a.ToString("X")); // "18EE90FF6C373E0EE4E3F0AD2"
+
             Assert.AreEqual(nonceExpected, nonce, "RAND: " + randomness.ToString());
         }
 
         [Test]
-        public void ToBigIntBETest()
+        public void GenerateNonceTest2()
         {
-            //byte[] bytes = { };
-            //BigInteger toBigintBE = NonceGenerator.ToBigIntBE(bytes);
-            //Assert.AreEqual(null, bytes, "BigInteger Valye: " + "[IMPLEMENT]");
+            PrivateKey pk = new PrivateKey(new byte[32]);
+            Debug.Log("SUI PRIVATE KEY: " + pk.KeyBase64);
+            Debug.Log("SUI PRIVATE KEY: " + pk.KeyHex);
+            string pubKey = pk.PublicKey().KeyBase64;
+            Debug.Log("SUI PUB KEY: " + pubKey);
+
+            Assert.AreEqual(pubKeyBase64Expected, pubKey);
+
+            BigInteger randomness = new BigInteger(915937356510258724);
+
+            string nonce = NonceGenerator.GenerateNonce(
+                (PublicKey)pk.PublicKey(),
+                maxEpoch,
+                randomness
+            );
+
+            //string nonceExpected = "LSLuhEjHLSeRvyI26wfPQSjYNbc";
+            //string nonceExpected = "pFPQCGSS83mj48FUm_QTj0rHOHU";
+            string nonceExpected = "u-gC5pmlX8ihTqXnmO4ePlu5tlk";
+            Debug.Log("RAND: LOG: " + randomness);
+
+            Assert.AreEqual(nonceExpected, nonce, "RAND: " + randomness.ToString());
+        }
+
+        [Test]
+        // Test Case 1: Empty Array
+        public void ToBigIntBETest_EmptyArray()
+        {
+            byte[] bytes = { };
+            BigInteger toBigintBE = NonceGenerator.ToBigIntBE(bytes);
+            Assert.AreEqual(BigInteger.Zero, toBigintBE, "BigInteger Value: " + toBigintBE);
+        }
+
+        [Test]
+        // Test Case 2: Single Byte
+        public void ToBigIntBETest_SingleByte()
+        {
+            byte[] bytes = new byte[] { 0x12 };
+            BigInteger toBigintBE = NonceGenerator.ToBigIntBE(bytes);
+            Assert.AreEqual(new BigInteger(0x12), toBigintBE, "BigInteger Value: " + toBigintBE);
+        }
+
+        [Test]
+        // Test Case 3: Multi-byte (Big-Endian Interpretation)
+        public void ToBigIntBETest_MultiByte()
+        {
+            byte[] bytes = new byte[] { 0x12, 0x34, 0x56, 0x78 };
+            BigInteger toBigintBE = NonceGenerator.ToBigIntBE(bytes);
+            Assert.AreEqual(new BigInteger(0x12345678), toBigintBE, "BigInteger Value: " + toBigintBE);
+        }
+
+        [Test]
+        // Test Case 4: Multi-byte with Leading Zeros
+        public void ToBigIntBETest_MultiByte_LeadingZeros()
+        {
+            byte[] bytes = new byte[] { 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88 };
+            BigInteger toBigintBE = NonceGenerator.ToBigIntBE(bytes);
+            Assert.AreEqual(new BigInteger(0xffeeddccbbaa9988), toBigintBE, "BigInteger Value: " + toBigintBE);
+        }
+
+        [Test]
+        // Test Case 5: Large Byte Array
+        public void ToBigIntBETest_LargeByteArray()
+        {
+            byte[] bytes = new byte[] { 0x00, 0x01, 0x02, 0x03 };
+            BigInteger toBigintBE = NonceGenerator.ToBigIntBE(bytes);
+            Assert.AreEqual(new BigInteger(0x010203), toBigintBE, "BigInteger Value: " + toBigintBE);
+        }
+
+        [Test]
+        // Test Case 6: Maximum Single Byte Value
+        public void ToBigIntBETest_MaximumSingleByteValue()
+        {
+            byte[] bytes = new byte[] { 0xff };
+            BigInteger toBigintBE = NonceGenerator.ToBigIntBE(bytes);
+            Assert.AreEqual(new BigInteger(0xff), toBigintBE, "BigInteger Value: " + toBigintBE);
+        }
+
+        [Test]
+        // TODO: Implement Base64URLEncode test
+        public void Base64UrlEncodeTest()
+        {
+            byte[] bytes = { };
+            string base64UrlEncoded = ZKLogin.SDK.NonceGenerator.Base64UrlEncode(bytes);
             throw new NotImplementedException();
         }
     }
