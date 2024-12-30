@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
 using System.Linq;
+using UnityEngine;
 
 namespace Sui.ZKLogin.SDK
 {
@@ -61,26 +62,23 @@ namespace Sui.ZKLogin.SDK
 
         public static BigInteger PoseidonHash(BigInteger[] inputs)
         {
-            var bigIntInputs = inputs.Select(x => {
-                var b = ToBigInteger(x);
-                if (b < 0 || b >= BN254_FIELD_SIZE)
-                    throw new ArgumentException($"Element {b} not in the BN254 field");
-                return b;
-            }).ToArray();
+            Debug.Log("=========: bigIntInputs Length: " + inputs.Length);
 
             // Call Poseidon hash according to the length of the input
-            if (bigIntInputs.Length <= 16 && PoseidonNumToHashFN.Length >= bigIntInputs.Length)
+            if (inputs.Length <= 16 && PoseidonNumToHashFN.Length >= inputs.Length)
             {
-                return PoseidonNumToHashFN[bigIntInputs.Length - 1](bigIntInputs, 1);
+                Debug.Log("!!!!!!!!!!");
+                return PoseidonNumToHashFN[inputs.Length - 1](inputs, 1);
             }
-            else if (bigIntInputs.Length <= 32) // If it's a small length input
+            else if (inputs.Length <= 32) // If it's a small length input
             {
-                var hash1 = PoseidonHash(bigIntInputs.Take(16).Cast<object>().ToArray());
-                var hash2 = PoseidonHash(bigIntInputs.Skip(16).Cast<object>().ToArray());
-                return PoseidonHash(new object[] { hash1, hash2 });
+                Debug.Log("*************");
+                var hash1 = PoseidonHash(inputs.Take(16).Cast<object>().ToArray());
+                var hash2 = PoseidonHash(inputs.Skip(16).Cast<object>().ToArray());
+                return PoseidonHash(new BigInteger[] { hash1, hash2 });
             }
 
-            throw new ArgumentException($"Unable to hash a vector of length {bigIntInputs.Length}");
+            throw new ArgumentException($"Unable to hash a vector of length {inputs.Length}");
         }
 
         /// <summary>
