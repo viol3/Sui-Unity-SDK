@@ -53,7 +53,7 @@ namespace Sui.ZKLogin
         /// <param name="num">The number to convert</param>
         /// <param name="width">The maximum width in bytes</param>
         /// <returns>A byte array representing the number with minimal leading zeros</returns>
-        public static byte[] ToBigEndianBytes(BigInteger num, int width)
+        public static byte[] ToBigEndianBytes(this BigInteger num, int width)
         {
             byte[] bytes = ToPaddedBigEndianBytes(num, width);
 
