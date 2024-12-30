@@ -1,11 +1,61 @@
 using System.Numerics;
 using NUnit.Framework;
+using Sui.Cryptography.Ed25519;
+using Sui.ZKLogin.SDK;
 
 namespace Sui.Tests.PoseidonHash
 {
     [TestFixture]
     public class PoseidonTest
     {
+        [Test]
+        public void PoseidonHasher1Test()
+        {
+            PrivateKey pk = new PrivateKey(new byte[32]);
+            PublicKey publicKey = (PublicKey)pk.PublicKey();
+
+            byte[] publicKeyBytes = publicKey.ToSuiBytes();
+            BigInteger publicKeyBigInt = NonceGenerator.ToBigIntBE(publicKeyBytes);
+
+            BigInteger eph_public_key_0 = publicKeyBigInt / BigInteger.Pow(2, 128);
+            BigInteger eph_public_key_1 = publicKeyBigInt % BigInteger.Pow(2, 128);
+
+            BigInteger bigNum = PoseidonHasher.PoseidonHash(new[] {
+                eph_public_key_0,
+                eph_public_key_1,
+                new BigInteger(0),
+                new BigInteger(91593735651025872)
+            });
+
+            BigInteger expected = BigInteger.Parse("11528381754461914166874197622133763632947811144082871006931258895171226799250");
+
+            Assert.AreEqual(expected, bigNum, "OUTPUT: " + bigNum);
+        }
+
+        [Test]
+        public void PoseidonHasher2Test()
+        {
+            PrivateKey pk = new PrivateKey(new byte[32]);
+            PublicKey publicKey = (PublicKey)pk.PublicKey();
+
+            byte[] publicKeyBytes = publicKey.ToSuiBytes();
+            BigInteger publicKeyBigInt = NonceGenerator.ToBigIntBE(publicKeyBytes);
+
+            BigInteger eph_public_key_0 = publicKeyBigInt / BigInteger.Pow(2, 128);
+            BigInteger eph_public_key_1 = publicKeyBigInt % BigInteger.Pow(2, 128);
+
+            BigInteger bigNum = PoseidonHasher.PoseidonHash(new[] {
+                eph_public_key_0,
+                eph_public_key_1,
+                new BigInteger(0),
+                new BigInteger(915937356510258724)
+            });
+
+            BigInteger expected = BigInteger.Parse("21517857862300500121514602984929659173241191373601654894619051960127601620569");
+
+            Assert.AreEqual(expected, bigNum, "OUTPUT: " + bigNum);
+        }
+
         [Test]
         public void PoseidonHash1Test()
         {
