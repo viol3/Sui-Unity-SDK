@@ -1,7 +1,7 @@
 using NUnit.Framework;
 using OpenDive.Utils.Jwt;
 
-namespace Sui.Tests
+namespace Sui.Tests.Jwt
 {
     [TestFixture]
     public class JwDecoderTest

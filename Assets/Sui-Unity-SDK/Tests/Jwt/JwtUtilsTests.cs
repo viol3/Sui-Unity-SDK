@@ -2,7 +2,7 @@ using System;
 using NUnit.Framework;
 using Sui.ZKLogin;
 
-namespace Sui.Tests
+namespace Sui.Tests.Jwt
 {
     [TestFixture]
     public class JwtUtilsTests
