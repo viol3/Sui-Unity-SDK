@@ -5,8 +5,16 @@ using System.Linq;
 
 namespace OpenDive.Crypto.PoseidonLite
 {
+    /// <summary>
+    /// TODO: Add tests for BigIntUnstringier
+    /// </summary>
     public static class BigIntUnstringifier
     {
+        /// <summary>
+        /// TODO: Add documentation
+        /// </summary>
+        /// <param name="base64Str"></param>
+        /// <returns></returns>
         private static BigInteger ConvertBase64ToBigInt(string base64Str)
         {
             byte[] byteArray = Convert.FromBase64String(base64Str);
@@ -14,6 +22,11 @@ namespace OpenDive.Crypto.PoseidonLite
             return BigInteger.Parse("0" + hex, System.Globalization.NumberStyles.HexNumber);
         }
 
+        /// <summary>
+        /// TODO: Add documentation
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
         public static Dictionary<string, object> UnstringifyBigInts(Dictionary<string, object> input)
         {
             var result = new Dictionary<string, object>();
@@ -26,7 +39,8 @@ namespace OpenDive.Crypto.PoseidonLite
                     var cArray = (IEnumerable<object>)kvp.Value;
                     result[kvp.Key] = cArray
                         .Select(item => ConvertBase64ToBigInt((string)item))
-                        .ToList();
+                        //.ToList(); // TODO: This is the initial issue-- we are converting to List instead of array.
+                        .ToArray();
                 }
                 else if (kvp.Key == "M")
                 {
@@ -35,8 +49,10 @@ namespace OpenDive.Crypto.PoseidonLite
                     result[kvp.Key] = mArray
                         .Select(subArray => ((IEnumerable<object>)subArray)
                             .Select(item => ConvertBase64ToBigInt((string)item))
-                            .ToList())
-                        .ToList();
+                            //.ToList()) // TODO: This is the initial issue -- we are converting to List instead of array.
+                            .ToArray())
+                        //.ToList();
+                        .ToArray();
                 }
             }
 
