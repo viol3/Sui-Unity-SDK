@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using UnityEngine;
 
 namespace OpenDive.Crypto.PoseidonLite
 {
@@ -25,7 +26,11 @@ namespace OpenDive.Crypto.PoseidonLite
                 BigInteger sum = 0;
                 for (int y = 0; y < state.Length; y++)
                 {
-                    sum = (sum + M[x][y] * state[y]) % F;
+                    BigInteger tempM = M[x][y];
+                    BigInteger tempState = state[y];
+
+                    //sum = (sum + M[x][y] * state[y]) % F;
+                    sum = (sum + tempM * tempState) % F;
                 }
                 result[x] = sum;
             }
@@ -131,6 +136,8 @@ namespace OpenDive.Crypto.PoseidonLite
 
             // IRVIN: Access C array
             //var cArray = (List<BigInteger>)opt["C"];
+            string typeStr = opt["C"].GetType().ToString();
+
             var cArray = (BigInteger[])opt["C"];
 
             // IRVIN: Access M array (list of lists)
