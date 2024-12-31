@@ -93,6 +93,15 @@ namespace Sui.Tests.PoseidonHash
         }
 
         [Test]
+        public void Pow5_VeryLargeBigInt_2()
+        {
+            BigInteger expected = BigInteger.Parse("5980946075033925263865594708745312481464042940133774844061775902450749620354");
+            BigInteger output = Poseidon.Pow5(BigInteger.Parse("144441570523660387698699922682251371601"));
+            Debug.Log("BIGINT::: " + output.ToString());
+            Assert.AreEqual(expected, output, "OUT: " + output);
+        }
+
+        [Test]
         public void PoseidonHash1Test()
         {
             string[] inputs = { "0x5b1f0533dd" };
