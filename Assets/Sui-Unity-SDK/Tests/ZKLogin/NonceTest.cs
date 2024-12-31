@@ -32,7 +32,7 @@ namespace Sui.Tests.ZkLogin
         ///     "/CTTrykDrvNxtl0WfBo3Q+H/L9VLJAzwXAJew6cMP70="
         /// </summary>
         [Test]
-        public void GenerateNonceTest()
+        public void GenerateNonceTest_1()
         {
             PrivateKey pk = new PrivateKey(new byte[32]);
             Debug.Log("SUI PRIVATE KEY: " + pk.KeyBase64);
@@ -60,7 +60,7 @@ namespace Sui.Tests.ZkLogin
         }
 
         [Test]
-        public void GenerateNonceTest2()
+        public void GenerateNonceTest_2()
         {
             PrivateKey pk = new PrivateKey(new byte[32]);
             Debug.Log("SUI PRIVATE KEY: " + pk.KeyBase64);
@@ -87,7 +87,7 @@ namespace Sui.Tests.ZkLogin
         }
 
         [Test]
-        public void GenerateNonceTest3()
+        public void GenerateNonceTest_3()
         {
             PrivateKey pk = new PrivateKey(new byte[32]);
             string pubKey = pk.PublicKey().KeyBase64;
@@ -107,7 +107,7 @@ namespace Sui.Tests.ZkLogin
         }
 
         [Test]
-        public void GenerateNonceTest4()
+        public void GenerateNonceTest_4()
         {
             PrivateKey pk = new PrivateKey(new byte[32]);
             string pubKey = pk.PublicKey().KeyBase64;
@@ -127,7 +127,7 @@ namespace Sui.Tests.ZkLogin
         }
 
         [Test]
-        public void GenerateNonceTest5()
+        public void GenerateNonceTest_5()
         {
             PrivateKey pk = new PrivateKey("d9zN88TckfIma6bORNvc55gYyNExHMfYWDPackyptVE=");
             string pubKey = pk.PublicKey().KeyBase64;
