@@ -77,18 +77,19 @@ namespace Sui.Tests.PoseidonHash
         [Test]
         public void Pow5_LargeBigInt()
         {
-            BigInteger expected = BigInteger.Parse("17433042403612874212574717670126127515225156112819435231497600124673361749600");
+            BigInteger expected = BigInteger.Parse("17559730436681389016774801990945372508707837448216484012798694610221969001056");
             BigInteger output = Poseidon.Pow5(BigInteger.Parse("915937356510258724"));
             Debug.Log("BIGINT::: " + output.ToString());
             Assert.AreEqual(expected, output, "OUT: " + output);
         }
 
         [Test]
-        public void Pow5_LargeLong()
+        public void Pow5_VeryLargeBigInt()
         {
-            //BigInteger output = Poseidon.Pow5(new BigInteger(915937356510258724));
-            long output = Poseidon.Pow5(long.Parse("915937356510258724"));
-            Assert.AreEqual(long.Parse("17433042403612874212574717670126127515225156112819435231497600124673361749600"), output, "OUT: " + output);
+            BigInteger expected = BigInteger.Parse("15185921239258314663131978835340256258828200357426086918741255628450751304834");
+            BigInteger output = Poseidon.Pow5(BigInteger.Parse("202306697704578242338925299207034965818"));
+            Debug.Log("BIGINT::: " + output.ToString());
+            Assert.AreEqual(expected, output, "OUT: " + output);
         }
 
         [Test]
