@@ -10,20 +10,8 @@ namespace Sui.Tests.ZkLogin
     [TestFixture]
     public class NonceTest : MonoBehaviour
     {
-        //int maxEpoch = 26;
-        //string pkBase64 = "lHezoWY/4pRWe+iajFHw62hQjmVQ6wlL+C8CJxw4bY0=";
-        //string pubKeyBase64Expected = "/CTTrykDrvNxtl0WfBo3Q+H/L9VLJAzwXAJew6cMP70=";
-
-        int maxEpoch = 0;
         string pkBase64 = "suiprivkey1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq509duq";
         string pubKeyBase64Expected = "O2onvM62pC1io6jQKm8Nc2UyFXcd4kOmOsBIoYtZ2ik=";
-
-        //BigInteger randomness = 91593735651025872471886891147594672981; // too long
-        //BigInteger randomness = 9159373565102587247;
-        //BigInteger randomness = BigInteger.Parse("915937356510258724");
-        BigInteger randomness = new BigInteger(91593735651025872);
-
-        string rand = "47012194554876445839229943898159241998";
 
         /// <summary>
         /// PrivateKey:
@@ -35,12 +23,11 @@ namespace Sui.Tests.ZkLogin
         public void GenerateNonceTest_1()
         {
             PrivateKey pk = new PrivateKey(new byte[32]);
-            Debug.Log("SUI PRIVATE KEY: " + pk.KeyBase64);
-            Debug.Log("SUI PRIVATE KEY: " + pk.KeyHex);
             string pubKey = pk.PublicKey().KeyBase64;
-            Debug.Log("SUI PUB KEY: " + pubKey);
-
             Assert.AreEqual(pubKeyBase64Expected, pubKey);
+
+            int maxEpoch = 0;
+            BigInteger randomness = new BigInteger(91593735651025872);
 
             string nonce = NonceGenerator.GenerateNonce(
                 (PublicKey)pk.PublicKey(),
@@ -48,14 +35,7 @@ namespace Sui.Tests.ZkLogin
                 randomness
             );
 
-            //string nonceExpected = "LSLuhEjHLSeRvyI26wfPQSjYNbc";
-            //string nonceExpected = "pFPQCGSS83mj48FUm_QTj0rHOHU";
             string nonceExpected = "SoeqFjFH8qNU8t4z1oh2aWp1jJI"; 
-            Debug.Log("RAND: LOG: " + randomness);
-
-            BigInteger a = BigInteger.Parse("47012194554876445839229943898159241998");
-            Debug.Log(a.ToString("X")); // "18EE90FF6C373E0EE4E3F0AD2"
-
             Assert.AreEqual(nonceExpected, nonce, "RAND: " + randomness.ToString());
         }
 
@@ -63,13 +43,11 @@ namespace Sui.Tests.ZkLogin
         public void GenerateNonceTest_2()
         {
             PrivateKey pk = new PrivateKey(new byte[32]);
-            Debug.Log("SUI PRIVATE KEY: " + pk.KeyBase64);
-            Debug.Log("SUI PRIVATE KEY: " + pk.KeyHex);
             string pubKey = pk.PublicKey().KeyBase64;
-            Debug.Log("SUI PUB KEY: " + pubKey);
 
             Assert.AreEqual(pubKeyBase64Expected, pubKey);
 
+            int maxEpoch = 0;
             BigInteger randomness = new BigInteger(915937356510258724);
 
             string nonce = NonceGenerator.GenerateNonce(
@@ -78,8 +56,6 @@ namespace Sui.Tests.ZkLogin
                 randomness
             );
 
-            //string nonceExpected = "LSLuhEjHLSeRvyI26wfPQSjYNbc";
-            //string nonceExpected = "pFPQCGSS83mj48FUm_QTj0rHOHU";
             string nonceExpected = "smaC7ju0NrM0birjNuUhZspaBOQ";
             Debug.Log("RAND: LOG: " + randomness);
 
@@ -93,8 +69,8 @@ namespace Sui.Tests.ZkLogin
             string pubKey = pk.PublicKey().KeyBase64;
             Assert.AreEqual(pubKeyBase64Expected, pubKey);
 
-            BigInteger randomness = BigInteger.Parse("144441570523660387698699922682251371601");
             int maxEpoch = 0;
+            BigInteger randomness = BigInteger.Parse("144441570523660387698699922682251371601");
 
             string nonce = NonceGenerator.GenerateNonce(
                 (PublicKey)pk.PublicKey(),
@@ -113,8 +89,8 @@ namespace Sui.Tests.ZkLogin
             string pubKey = pk.PublicKey().KeyBase64;
             Assert.AreEqual(pubKeyBase64Expected, pubKey);
 
-            BigInteger randomness = BigInteger.Parse("52795003160875479850680435799259259156");
             int maxEpoch = 0;
+            BigInteger randomness = BigInteger.Parse("52795003160875479850680435799259259156");
 
             string nonce = NonceGenerator.GenerateNonce(
                 (PublicKey)pk.PublicKey(),

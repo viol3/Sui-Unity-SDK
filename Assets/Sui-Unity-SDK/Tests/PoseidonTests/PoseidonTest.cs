@@ -3,7 +3,6 @@ using NUnit.Framework;
 using OpenDive.Crypto.PoseidonLite;
 using Sui.Cryptography.Ed25519;
 using Sui.ZKLogin.SDK;
-using UnityEngine;
 
 namespace Sui.Tests.PoseidonHash
 {
