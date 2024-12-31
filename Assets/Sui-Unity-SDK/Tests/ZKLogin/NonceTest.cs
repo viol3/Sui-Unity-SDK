@@ -19,6 +19,7 @@ namespace Sui.Tests.ZkLogin
         /// PublicKey:
         ///     "/CTTrykDrvNxtl0WfBo3Q+H/L9VLJAzwXAJew6cMP70="
         /// </summary>
+        // Test Case 1: Empty private key, small BigInteger
         [Test]
         public void GenerateNonceTest_1()
         {
@@ -40,6 +41,7 @@ namespace Sui.Tests.ZkLogin
         }
 
         [Test]
+        // Test Case 2: Empty private key, small BigInteger
         public void GenerateNonceTest_2()
         {
             PrivateKey pk = new PrivateKey(new byte[32]);
@@ -63,6 +65,7 @@ namespace Sui.Tests.ZkLogin
         }
 
         [Test]
+        // Test Case 3: Empty private key, large BigInteger
         public void GenerateNonceTest_3()
         {
             PrivateKey pk = new PrivateKey(new byte[32]);
@@ -83,6 +86,7 @@ namespace Sui.Tests.ZkLogin
         }
 
         [Test]
+        // Test Case 4: Empty private key, large BigInteger
         public void GenerateNonceTest_4()
         {
             PrivateKey pk = new PrivateKey(new byte[32]);
@@ -103,6 +107,7 @@ namespace Sui.Tests.ZkLogin
         }
 
         [Test]
+        // Test Case 5: Sample private key, bigger epoch number and large BigInteger for randomness
         public void GenerateNonceTest_5()
         {
             PrivateKey pk = new PrivateKey("d9zN88TckfIma6bORNvc55gYyNExHMfYWDPackyptVE=");
