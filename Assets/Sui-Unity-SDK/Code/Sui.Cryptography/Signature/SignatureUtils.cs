@@ -27,7 +27,6 @@ using System;
 using System.Collections.Generic;
 using Chaos.NaCl;
 using System.Linq;
-using Sui.Rpc.Client;
 using Sui.Utilities;
 using static Sui.Cryptography.SignatureUtils;
 
