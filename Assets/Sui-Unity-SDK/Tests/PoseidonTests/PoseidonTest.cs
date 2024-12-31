@@ -53,7 +53,31 @@ namespace Sui.Tests.PoseidonHash
                 new BigInteger(915937356510258724)
             });
 
-            BigInteger expected = BigInteger.Parse("17433042403612874212574717670126127515225156112819435231497600124673361749600n");
+            BigInteger expected = BigInteger.Parse("1251557835947443048337993173967560552083820691731823376970830811540577977572");
+
+            Assert.AreEqual(expected, bigNum, "OUTPUT: " + bigNum);
+        }
+
+        [Test]
+        public void PoseidonHasher3Test()
+        {
+            PrivateKey pk = new PrivateKey(new byte[32]);
+            PublicKey publicKey = (PublicKey)pk.PublicKey();
+
+            byte[] publicKeyBytes = publicKey.ToSuiBytes();
+            BigInteger publicKeyBigInt = NonceGenerator.ToBigIntBE(publicKeyBytes);
+
+            BigInteger eph_public_key_0 = publicKeyBigInt / BigInteger.Pow(2, 128);
+            BigInteger eph_public_key_1 = publicKeyBigInt % BigInteger.Pow(2, 128);
+
+            BigInteger bigNum = PoseidonHasher.PoseidonHash(new[] {
+                eph_public_key_0,
+                eph_public_key_1,
+                new BigInteger(0),
+                BigInteger.Parse("144441570523660387698699922682251371601")
+            });
+
+            BigInteger expected = BigInteger.Parse("17193722240089020688281705003166560172091221092476445933947167090340422628583");
 
             Assert.AreEqual(expected, bigNum, "OUTPUT: " + bigNum);
         }
