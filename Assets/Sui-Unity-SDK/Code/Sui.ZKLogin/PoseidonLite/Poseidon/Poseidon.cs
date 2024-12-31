@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Org.BouncyCastle.Utilities;
 using UnityEngine;
 
 namespace OpenDive.Crypto.PoseidonLite
@@ -12,10 +13,62 @@ namespace OpenDive.Crypto.PoseidonLite
         private static readonly int N_ROUNDS_F = 8;
         private static readonly int[] N_ROUNDS_P = { 56, 57, 56, 60, 60, 63, 64, 63, 60, 66, 60, 65, 70, 60, 64, 68 };
 
-        private static BigInteger Pow5(BigInteger v)
+        public static BigInteger Pow5(BigInteger v)
         {
-            BigInteger squared = (v * v) % F;
-            return (v * squared * squared) % F;
+            //BigInteger squared = (v * v) % F;
+            //return (v * squared * squared) % F;
+
+            //BigInteger o = v * v;             // Compute v^2
+            //return (v * o * o) % F;          // Compute v^5 % F
+
+            //BigInteger squared = (v * v) % F;
+            //Debug.Log($"C#: squared: {squared}");
+            //Debug.Log($"C#: v^2 (binary) = {Convert.ToString((long)squared, 2)}");
+            //BigInteger result = (v * squared * squared) % F;
+            //Debug.Log($"C#: result: {result}");
+            //return result;
+
+            BigInteger o = BigInteger.Multiply(v, v);
+            Debug.Log($"C#: squared: {o}");
+            BigInteger result = BigInteger.Multiply(v, BigInteger.Multiply(o, o)) % F;
+
+            ////Step 1: Compute v^2(intermediate value o)
+            //BigInteger o = v * v;
+            //Debug.Log("v^2 (o): " + o);
+            //// Step 2: Compute (v * o * o) % F
+            //BigInteger result = (v * o * o) % F;
+            //Debug.Log("Final result: " + result);
+
+            //BigInteger o = BigInteger.Multiply(v, v);
+            //Debug.Log("v^2 (o): " + o);
+            //BigInteger result = (v * o * o) % F;
+            //Debug.Log("Final result: " + result);
+
+            //BigInteger o = BigInteger.Pow(v, 5);
+            //BigInteger result = BigInteger.ModPow(o, 1, F);
+
+            // Adjust for negative modulo results
+            if (result < 0)
+            {
+                result += F;
+            }
+
+            return result;
+        }
+
+        public static long Pow5(long v)
+        {
+            //long F = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
+            //Long F = Long.Parse("115792089237316195423570985008687907853269984665640564039457584007913129639937"); // Example modulus F
+
+            long F = long.Parse("21888242871839275222246405745257275088548364400416034343698204186575808495617");
+
+            long squared = (v * v) % F;
+            Debug.Log($"C#: squared: {squared}");
+            Debug.Log($"C#: v^2 (binary) = {Convert.ToString((long)squared, 2)}");
+            long result = (v * squared * squared) % F;
+            Debug.Log($"C#: result: {result}");
+            return result;
         }
 
         private static BigInteger[] Mix(BigInteger[] state, BigInteger[][] M)
