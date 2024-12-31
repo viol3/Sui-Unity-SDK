@@ -28,7 +28,6 @@ using Chaos.NaCl;
 using Sui.Cryptography;
 using Sui.Utilities;
 using OpenDive.BCS;
-using Sui.Rpc.Client;
 using System.Linq;
 
 namespace Sui.Accounts
