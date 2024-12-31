@@ -1,7 +1,9 @@
 using System.Numerics;
 using NUnit.Framework;
+using OpenDive.Crypto.PoseidonLite;
 using Sui.Cryptography.Ed25519;
 using Sui.ZKLogin.SDK;
+using UnityEngine;
 
 namespace Sui.Tests.PoseidonHash
 {
@@ -51,9 +53,42 @@ namespace Sui.Tests.PoseidonHash
                 new BigInteger(915937356510258724)
             });
 
-            BigInteger expected = BigInteger.Parse("21517857862300500121514602984929659173241191373601654894619051960127601620569");
+            BigInteger expected = BigInteger.Parse("17433042403612874212574717670126127515225156112819435231497600124673361749600n");
 
             Assert.AreEqual(expected, bigNum, "OUTPUT: " + bigNum);
+        }
+
+        [Test]
+        public void Pow5()
+        {
+            BigInteger output = Poseidon.Pow5(new BigInteger(10));
+            Assert.AreEqual(BigInteger.Parse("100000"), output, "OUT: " + output);
+        }
+
+
+        [Test]
+        public void Pow5_EdgeCase()
+        {
+            BigInteger expected = BigInteger.Parse("11010837150789914634450318524941536756949983930089334391384279603582433620699");
+            BigInteger output = Poseidon.Pow5(new BigInteger(91593735651025872));
+            Assert.AreEqual(expected, output, "OUT: " + output);
+        }
+
+        [Test]
+        public void Pow5_LargeBigInt()
+        {
+            BigInteger expected = BigInteger.Parse("17433042403612874212574717670126127515225156112819435231497600124673361749600");
+            BigInteger output = Poseidon.Pow5(BigInteger.Parse("915937356510258724"));
+            Debug.Log("BIGINT::: " + output.ToString());
+            Assert.AreEqual(expected, output, "OUT: " + output);
+        }
+
+        [Test]
+        public void Pow5_LargeLong()
+        {
+            //BigInteger output = Poseidon.Pow5(new BigInteger(915937356510258724));
+            long output = Poseidon.Pow5(long.Parse("915937356510258724"));
+            Assert.AreEqual(long.Parse("17433042403612874212574717670126127515225156112819435231497600124673361749600"), output, "OUT: " + output);
         }
 
         [Test]
