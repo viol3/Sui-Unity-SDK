@@ -11,7 +11,7 @@ namespace Sui.Tests.PoseidonHash
     public class PoseidonTest
     {
         [Test]
-        public void PoseidonHasher1Test()
+        public void PoseidonHasherTest_1()
         {
             PrivateKey pk = new PrivateKey(new byte[32]);
             PublicKey publicKey = (PublicKey)pk.PublicKey();
@@ -29,13 +29,15 @@ namespace Sui.Tests.PoseidonHash
                 new BigInteger(91593735651025872)
             });
 
-            BigInteger expected = BigInteger.Parse("11528381754461914166874197622133763632947811144082871006931258895171226799250");
+            BigInteger expected = BigInteger.Parse(
+                "11528381754461914166874197622133763632947811144082871006931258895171226799250"
+            );
 
             Assert.AreEqual(expected, bigNum, "OUTPUT: " + bigNum);
         }
 
         [Test]
-        public void PoseidonHasher2Test()
+        public void PoseidonHasherTest_2()
         {
             PrivateKey pk = new PrivateKey(new byte[32]);
             PublicKey publicKey = (PublicKey)pk.PublicKey();
@@ -53,13 +55,15 @@ namespace Sui.Tests.PoseidonHash
                 new BigInteger(915937356510258724)
             });
 
-            BigInteger expected = BigInteger.Parse("1251557835947443048337993173967560552083820691731823376970830811540577977572");
+            BigInteger expected = BigInteger.Parse(
+                "1251557835947443048337993173967560552083820691731823376970830811540577977572"
+            );
 
             Assert.AreEqual(expected, bigNum, "OUTPUT: " + bigNum);
         }
 
         [Test]
-        public void PoseidonHasher3Test()
+        public void PoseidonHasherTest_3()
         {
             PrivateKey pk = new PrivateKey(new byte[32]);
             PublicKey publicKey = (PublicKey)pk.PublicKey();
@@ -77,51 +81,69 @@ namespace Sui.Tests.PoseidonHash
                 BigInteger.Parse("144441570523660387698699922682251371601")
             });
 
-            BigInteger expected = BigInteger.Parse("17193722240089020688281705003166560172091221092476445933947167090340422628583");
+            BigInteger expected = BigInteger.Parse(
+                "17193722240089020688281705003166560172091221092476445933947167090340422628583"
+            );
 
             Assert.AreEqual(expected, bigNum, "OUTPUT: " + bigNum);
         }
 
         [Test]
-        public void Pow5()
+        public void Pow5_Small()
         {
-            BigInteger output = Poseidon.Pow5(new BigInteger(10));
-            Assert.AreEqual(BigInteger.Parse("100000"), output, "OUT: " + output);
+            BigInteger expected = BigInteger.Parse("100000");
+            BigInteger output = Poseidon.Pow5(
+                new BigInteger(10)
+            );
+            Assert.AreEqual(expected, output, "OUT: " + output);
         }
 
 
         [Test]
         public void Pow5_EdgeCase()
         {
-            BigInteger expected = BigInteger.Parse("11010837150789914634450318524941536756949983930089334391384279603582433620699");
-            BigInteger output = Poseidon.Pow5(new BigInteger(91593735651025872));
+            BigInteger expected = BigInteger.Parse(
+                "11010837150789914634450318524941536756949983930089334391384279603582433620699"
+            );
+            BigInteger output = Poseidon.Pow5(
+                new BigInteger(91593735651025872)
+            );
             Assert.AreEqual(expected, output, "OUT: " + output);
         }
 
         [Test]
         public void Pow5_LargeBigInt()
         {
-            BigInteger expected = BigInteger.Parse("17559730436681389016774801990945372508707837448216484012798694610221969001056");
-            BigInteger output = Poseidon.Pow5(BigInteger.Parse("915937356510258724"));
-            Debug.Log("BIGINT::: " + output.ToString());
+            BigInteger expected = BigInteger.Parse(
+                "17559730436681389016774801990945372508707837448216484012798694610221969001056"
+            );
+            BigInteger output = Poseidon.Pow5(
+                BigInteger.Parse("915937356510258724")
+            );
             Assert.AreEqual(expected, output, "OUT: " + output);
         }
 
         [Test]
         public void Pow5_VeryLargeBigInt()
         {
-            BigInteger expected = BigInteger.Parse("15185921239258314663131978835340256258828200357426086918741255628450751304834");
-            BigInteger output = Poseidon.Pow5(BigInteger.Parse("202306697704578242338925299207034965818"));
-            Debug.Log("BIGINT::: " + output.ToString());
+            BigInteger expected = BigInteger.Parse(
+                "15185921239258314663131978835340256258828200357426086918741255628450751304834"
+            );
+            BigInteger output = Poseidon.Pow5(
+                BigInteger.Parse("202306697704578242338925299207034965818")
+            );
             Assert.AreEqual(expected, output, "OUT: " + output);
         }
 
         [Test]
         public void Pow5_VeryLargeBigInt_2()
         {
-            BigInteger expected = BigInteger.Parse("5980946075033925263865594708745312481464042940133774844061775902450749620354");
-            BigInteger output = Poseidon.Pow5(BigInteger.Parse("144441570523660387698699922682251371601"));
-            Debug.Log("BIGINT::: " + output.ToString());
+            BigInteger expected = BigInteger.Parse(
+                "5980946075033925263865594708745312481464042940133774844061775902450749620354"
+            );
+            BigInteger output = Poseidon.Pow5(
+                BigInteger.Parse("144441570523660387698699922682251371601")
+            );
             Assert.AreEqual(expected, output, "OUT: " + output);
         }
 
