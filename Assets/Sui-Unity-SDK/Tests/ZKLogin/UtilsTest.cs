@@ -11,27 +11,31 @@ namespace Sui.Tests.ZkLogin
         [Test]
         public void FindFirstNonZeroIndexTest()
         {
-            byte[] bytes = null;
-            int actualIndex = ZKLogin.Utils.FindFirstNonZeroIndex(bytes);
-            throw new NotImplementedException();
+            byte[] bytes = { 0, 0, 0, 1, 2, 3 };
+            int actualIndex = Utils.FindFirstNonZeroIndex(bytes);
+            Assert.AreEqual(3, actualIndex);
         }
 
         // TODO: Implement ToPaddedBigEndianBytes
         [Test]
         public void ToPaddedBigEndianBytesTest()
         {
-            BigInteger bigInt = 0;
-            byte[] paddedBigIntBytes = bigInt.ToPaddedBigEndianBytes(20);
-            throw new NotImplementedException();
+            BigInteger bigInt = new BigInteger(255);
+            byte[] paddedBytes = bigInt.ToPaddedBigEndianBytes(4);
+            Assert.AreEqual(string.Join(",", paddedBytes), "0,0,0,255");
         }
 
         // TODO: Implement ToBigEndianByte
         [Test]
         public void ToBigEndianBytesTest()
         {
-            BigInteger bigInt = 0;
-            byte[] bigEndianBytes = bigInt.ToPaddedBigEndianBytes(20);
-            throw new NotImplementedException();
+            BigInteger num1 = new BigInteger(255);
+            byte[] bigEndianBytes = num1.ToBigEndianBytes(4);
+            Assert.AreEqual(string.Join(",", bigEndianBytes), "255");
+
+            BigInteger num2 = new BigInteger(0);
+            byte[] bigEndianBytesZero = num2.ToBigEndianBytes(4);
+            Assert.AreEqual(string.Join(",", bigEndianBytesZero), "0");
         }
     }
 }
