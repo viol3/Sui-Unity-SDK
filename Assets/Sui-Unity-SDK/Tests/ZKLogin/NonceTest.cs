@@ -80,7 +80,7 @@ namespace Sui.Tests.ZkLogin
 
             //string nonceExpected = "LSLuhEjHLSeRvyI26wfPQSjYNbc";
             //string nonceExpected = "pFPQCGSS83mj48FUm_QTj0rHOHU";
-            string nonceExpected = "u-gC5pmlX8ihTqXnmO4ePlu5tlk";
+            string nonceExpected = "smaC7ju0NrM0birjNuUhZspaBOQ";
             Debug.Log("RAND: LOG: " + randomness);
 
             Assert.AreEqual(nonceExpected, nonce, "RAND: " + randomness.ToString());
