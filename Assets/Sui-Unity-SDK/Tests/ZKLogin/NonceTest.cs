@@ -87,6 +87,46 @@ namespace Sui.Tests.ZkLogin
         }
 
         [Test]
+        public void GenerateNonceTest3()
+        {
+            PrivateKey pk = new PrivateKey(new byte[32]);
+            string pubKey = pk.PublicKey().KeyBase64;
+            Assert.AreEqual(pubKeyBase64Expected, pubKey);
+
+            BigInteger randomness = BigInteger.Parse("144441570523660387698699922682251371601");
+            int maxEpoch = 0;
+
+            string nonce = NonceGenerator.GenerateNonce(
+                (PublicKey)pk.PublicKey(),
+                maxEpoch,
+                randomness
+            );
+
+            string nonceExpected = "Au6gNOIjTVy5y7yaoq63UVNWNOc";
+            Assert.AreEqual(nonceExpected, nonce, "RAND: " + randomness.ToString());
+        }
+
+        [Test]
+        public void GenerateNonceTest4()
+        {
+            PrivateKey pk = new PrivateKey(new byte[32]);
+            string pubKey = pk.PublicKey().KeyBase64;
+            Assert.AreEqual(pubKeyBase64Expected, pubKey);
+
+            BigInteger randomness = BigInteger.Parse("52795003160875479850680435799259259156");
+            int maxEpoch = 0;
+
+            string nonce = NonceGenerator.GenerateNonce(
+                (PublicKey)pk.PublicKey(),
+                maxEpoch,
+                randomness
+            );
+
+            string nonceExpected = "5OR1kjf9JnXLjqOFoCf3oWNYUuI";
+            Assert.AreEqual(nonceExpected, nonce, "RAND: " + randomness.ToString());
+        }
+
+        [Test]
         // Test Case 1: Empty Array
         public void ToBigIntBETest_EmptyArray()
         {
