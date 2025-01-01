@@ -73,6 +73,31 @@ namespace Sui.ZKLogin
         }
 
         /// <summary>
+        /// Encodes the input byte array or string to a Base64 URL-safe string.
+        /// </summary>
+        /// <param name="input">The input as a string.</param>
+        /// <returns>A Base64 URL-safe encoded string.</returns>
+        public static string Base64UrlEncode(string input)
+        {
+            byte[] data = Encoding.UTF8.GetBytes(input);
+            return Base64UrlEncode(data);
+        }
+
+        /// <summary>
+        /// Encodes the input byte array or string to a Base64 URL-safe string.
+        /// </summary>
+        /// <param name="input">The input as a byte array.</param>
+        /// <returns>A Base64 URL-safe encoded string.</returns>
+        public static string Base64UrlEncode(byte[] input)
+        {
+            string base64 = Convert.ToBase64String(input);
+            return base64
+                .Replace('+', '-')
+                .Replace('/', '_')
+                .TrimEnd('=');
+        }
+
+        /// <summary>
         /// Decodes a base64URL encoded string starting from a specific position
         /// </summary>
         /// <param name="s">The base64URL encoded string</param>

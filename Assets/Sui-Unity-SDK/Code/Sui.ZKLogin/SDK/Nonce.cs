@@ -100,22 +100,12 @@ namespace Sui.ZKLogin.SDK
             });
 
             byte[] Z = ZKLogin.Utils.ToPaddedBigEndianBytes(bigNum, 20);
-            string nonce = Base64UrlEncode(Z);
+            string nonce = JwtUtils.Base64UrlEncode(Z);
 
             if (nonce.Length != NONCE_LENGTH)
                 throw new Exception($"Length of nonce {nonce} ({nonce.Length}) is not equal to {NONCE_LENGTH}");
 
             return nonce;
-        }
-
-        // Base64Url encoding implementation
-        public static string Base64UrlEncode(byte[] input)
-        {
-            string base64 = Convert.ToBase64String(input);
-            return base64
-                .Replace('+', '-')
-                .Replace('/', '_')
-                .TrimEnd('=');
         }
     }
 }

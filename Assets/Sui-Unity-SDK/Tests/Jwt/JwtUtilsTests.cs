@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using NUnit.Framework;
 using Sui.ZKLogin;
 
@@ -7,6 +8,46 @@ namespace Sui.Tests.Jwt
     [TestFixture]
     public class JwtUtilsTests
     {
+        [Test]
+        public void TestEncode_StringInput()
+        {
+            string input = "Hello, World!";
+            string expected = "SGVsbG8sIFdvcmxkIQ";
+            string result = JwtUtils.Base64UrlEncode(input);
+
+            Assert.AreEqual(expected, result);
+        }
+
+        [Test]
+        public void TestEncode_ByteArrayInput()
+        {
+            byte[] input = Encoding.UTF8.GetBytes("Hello, ByteArray!");
+            string expected = "SGVsbG8sIEJ5dGVBcnJheSE";
+            string result = JwtUtils.Base64UrlEncode(input);
+
+            Assert.AreEqual(expected, result);
+        }
+
+        [Test]
+        public void TestEncode_EmptyStringInput()
+        {
+            string input = "";
+            string expected = "";
+            string result = JwtUtils.Base64UrlEncode(input);
+
+            Assert.AreEqual(expected, result);
+        }
+
+        [Test]
+        public void TestEncode_EmptyByteArrayInput()
+        {
+            byte[] input = new byte[] { };
+            string expected = "";
+            string result = JwtUtils.Base64UrlEncode(input);
+
+            Assert.AreEqual(expected, result);
+        }
+
         [Test]
         public void ExtractClaimValue_ValidClaim_ReturnsCorrectValue()
         {
