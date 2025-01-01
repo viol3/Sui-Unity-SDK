@@ -24,13 +24,8 @@ namespace Sui.ZKLogin
         public static int FindFirstNonZeroIndex(byte[] bytes)
         {
             for (int i = 0; i < bytes.Length; i++)
-            {
                 if (bytes[i] != 0)
-                {
                     return i;
-                }
-            }
-
             return -1;
         }
 
@@ -65,9 +60,7 @@ namespace Sui.ZKLogin
             int firstNonZeroIndex = FindFirstNonZeroIndex(bytes);
 
             if (firstNonZeroIndex == -1)
-            {
                 return new byte[] { 0 };
-            }
 
             return bytes.Skip(firstNonZeroIndex).ToArray();
         }
@@ -123,18 +116,16 @@ namespace Sui.ZKLogin
         public static BigInteger HashASCIIStrToField(string str, int maxSize)
         {
             if (str.Length > maxSize)
-            {
                 throw new ArgumentException($"String {str} is longer than {maxSize} chars");
-            }
 
             var strPadded = str.PadRight(maxSize, '\u0000')
-                              .Select(c => (int)c)
-                              .ToArray();
+                .Select(c => (int)c)
+                .ToArray();
 
             int chunkSize = PACK_WIDTH / 8;
             var packed = ChunkArray(strPadded, chunkSize)
-                         .Select(chunk => BytesBEToBigInt(chunk.Select(b => (byte)b).ToArray()))
-                         .ToArray();
+                .Select(chunk => BytesBEToBigInt(chunk.Select(b => (byte)b).ToArray()))
+                .ToArray();
 
             return SDK.PoseidonHasher.PoseidonHash(packed);
         }
@@ -160,8 +151,41 @@ namespace Sui.ZKLogin
             int maxValueLength = MAX_KEY_CLAIM_VALUE_LENGTH,
             int maxAudLength = MAX_AUD_VALUE_LENGTH)
         {
+            BigInteger bigIntSalt = BigInteger.Parse(salt);
+            return GenAddressSeed(
+                bigIntSalt,
+                name,
+                value,
+                aud,
+                maxNameLength,
+                maxValueLength,
+                maxAudLength
+            );
+        }
+
+        /// <summary>
+        /// Generates an address seed based on provided parameters.
+        /// TODO: Add test.
+        /// </summary>
+        /// <param name="salt">The salt value as a BigInteger.</param>
+        /// <param name="name">The name value to hash.</param>
+        /// <param name="value">The value to hash.</param>
+        /// <param name="aud">The audience value to hash.</param>
+        /// <param name="maxNameLength">The maximum name length (default is MAX_KEY_CLAIM_NAME_LENGTH).</param>
+        /// <param name="maxValueLength">The maximum value length (default is MAX_KEY_CLAIM_VALUE_LENGTH).</param>
+        /// <param name="maxAudLength">The maximum audience length (default is MAX_AUD_VALUE_LENGTH).</param>
+        /// <returns>The generated address seed as a BigInteger.</returns>
+        public static BigInteger GenAddressSeed(
+            BigInteger salt,
+            string name,
+            string value,
+            string aud,
+            int maxNameLength = MAX_KEY_CLAIM_NAME_LENGTH,
+            int maxValueLength = MAX_KEY_CLAIM_VALUE_LENGTH,
+            int maxAudLength = MAX_AUD_VALUE_LENGTH)
+        {
             var saltHash = SDK.PoseidonHasher.PoseidonHash(
-                new List<BigInteger> { BigInteger.Parse(salt) }.ToArray()
+                new List<BigInteger> { salt }.ToArray()
             );
 
             return SDK.PoseidonHasher.PoseidonHash(
@@ -174,7 +198,5 @@ namespace Sui.ZKLogin
                 }.ToArray()
             );
         }
-
     }
-
 }
