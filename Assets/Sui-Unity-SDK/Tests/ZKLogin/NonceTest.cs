@@ -187,7 +187,7 @@ namespace Sui.Tests.ZkLogin
         public void Base64UrlEncodeTest()
         {
             byte[] bytes = { };
-            string base64UrlEncoded = ZKLogin.SDK.NonceGenerator.Base64UrlEncode(bytes);
+            string base64UrlEncoded = ZKLogin.JwtUtils.Base64UrlEncode(bytes);
             throw new NotImplementedException();
         }
     }
