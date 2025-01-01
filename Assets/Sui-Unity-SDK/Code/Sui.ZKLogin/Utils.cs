@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
@@ -10,6 +11,10 @@ namespace Sui.ZKLogin
     /// </summary>
     public static class Utils
     {
+        private const int MAX_KEY_CLAIM_NAME_LENGTH = 32;
+        private const int MAX_KEY_CLAIM_VALUE_LENGTH = 115;
+        private const int MAX_AUD_VALUE_LENGTH = 145;
+        private const int PACK_WIDTH = 248;
 
         /// <summary>
         /// Finds the index of the first non-zero byte in a byte array.
@@ -65,6 +70,109 @@ namespace Sui.ZKLogin
             }
 
             return bytes.Skip(firstNonZeroIndex).ToArray();
+        }
+
+        /// <summary>
+        /// Converts a big-endian byte array to a BigInteger.
+        /// </summary>
+        /// <param name="bytes">The byte array in big-endian format.</param>
+        /// <returns>A BigInteger representing the value of the byte array.</returns>
+        public static BigInteger BytesBEToBigInt(byte[] bytes)
+        {
+            if (bytes == null || bytes.Length == 0)
+                return BigInteger.Zero;
+
+            string hex = string.Join("", bytes.Select(b => b.ToString("X2")));
+            return BigInteger.Parse("0" + hex, System.Globalization.NumberStyles.HexNumber);
+        }
+
+        /// <summary>
+        /// Splits an array into chunks of a specified size. If the array is not evenly divisible
+        /// by chunkSize, the first chunk will be smaller than chunkSize.
+        /// </summary>
+        /// <typeparam name="T">The type of elements in the array.</typeparam>
+        /// <param name="array">The array to split.</param>
+        /// <param name="chunkSize">The size of each chunk.</param>
+        /// <returns>A list of chunks, where each chunk is a list of elements.</returns>
+        public static List<List<T>> ChunkArray<T>(T[] array, int chunkSize)
+        {
+            if (array == null || chunkSize <= 0)
+                throw new ArgumentException("Invalid array or chunk size");
+
+            var chunks = new List<List<T>>();
+            int totalChunks = (array.Length + chunkSize - 1) / chunkSize; // Ceiling division
+
+            for (int i = 0; i < totalChunks; i++)
+            {
+                int start = i * chunkSize;
+                int end = Math.Min(start + chunkSize, array.Length);
+                chunks.Add(array.Skip(start).Take(end - start).ToList());
+            }
+
+            return chunks;
+        }
+
+        /// <summary>
+        /// TODO: Add test.
+        /// Hashes an ASCII string to a field element.
+        /// </summary>
+        /// <param name="str">The ASCII string to hash.</param>
+        /// <param name="maxSize">The maximum allowed size of the string.</param>
+        /// <param name="poseidonHash">The hashing function to use.</param>
+        /// <returns>A hashed BigInteger value.</returns>
+        public static BigInteger HashASCIIStrToField(string str, int maxSize)
+        {
+            if (str.Length > maxSize)
+            {
+                throw new ArgumentException($"String {str} is longer than {maxSize} chars");
+            }
+
+            var strPadded = str.PadRight(maxSize, '\u0000')
+                              .Select(c => (int)c)
+                              .ToArray();
+
+            int chunkSize = PACK_WIDTH / 8;
+            var packed = ChunkArray(strPadded, chunkSize)
+                         .Select(chunk => BytesBEToBigInt(chunk.Select(b => (byte)b).ToArray()))
+                         .ToArray();
+
+            return SDK.PoseidonHasher.PoseidonHash(packed);
+        }
+
+        /// <summary>
+        /// Generates an address seed based on provided parameters.
+        /// TODO: Add test.
+        /// </summary>
+        /// <param name="salt">The salt value as a string or BigInteger.</param>
+        /// <param name="name">The name value to hash.</param>
+        /// <param name="value">The value to hash.</param>
+        /// <param name="aud">The audience value to hash.</param>
+        /// <param name="maxNameLength">The maximum name length (default is MAX_KEY_CLAIM_NAME_LENGTH).</param>
+        /// <param name="maxValueLength">The maximum value length (default is MAX_KEY_CLAIM_VALUE_LENGTH).</param>
+        /// <param name="maxAudLength">The maximum audience length (default is MAX_AUD_VALUE_LENGTH).</param>
+        /// <returns>The generated address seed as a BigInteger.</returns>
+        public static BigInteger GenAddressSeed(
+            string salt,
+            string name,
+            string value,
+            string aud,
+            int maxNameLength = MAX_KEY_CLAIM_NAME_LENGTH,
+            int maxValueLength = MAX_KEY_CLAIM_VALUE_LENGTH,
+            int maxAudLength = MAX_AUD_VALUE_LENGTH)
+        {
+            var saltHash = SDK.PoseidonHasher.PoseidonHash(
+                new List<BigInteger> { BigInteger.Parse(salt) }.ToArray()
+            );
+
+            return SDK.PoseidonHasher.PoseidonHash(
+                new List<BigInteger>
+                {
+                    HashASCIIStrToField(name, maxNameLength),
+                    HashASCIIStrToField(value, maxValueLength),
+                    HashASCIIStrToField(aud, maxAudLength),
+                    saltHash
+                }.ToArray()
+            );
         }
 
     }
