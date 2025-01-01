@@ -99,7 +99,6 @@ namespace Sui.ZKLogin.SDK
                 randomness
             });
 
-            //byte[] Z = Utils.ToPaddedBigEndianBytes(bigNum, 20);
             byte[] Z = ZKLogin.Utils.ToPaddedBigEndianBytes(bigNum, 20);
             string nonce = Base64UrlEncode(Z);
 
@@ -108,20 +107,6 @@ namespace Sui.ZKLogin.SDK
 
             return nonce;
         }
-
-        // Helper function to convert BigInteger to padded big-endian bytes
-        //private static byte[] ToPaddedBigEndianBytes(BigInteger value, int length)
-        //{
-        //    byte[] bytes = value.ToByteArray();
-        //    Array.Reverse(bytes); // Convert to big-endian
-
-        //    if (bytes.Length > length)
-        //        throw new ArgumentException($"Value too large for {length} bytes");
-
-        //    byte[] paddedBytes = new byte[length];
-        //    Array.Copy(bytes, 0, paddedBytes, length - bytes.Length, bytes.Length);
-        //    return paddedBytes;
-        //}
 
         // Base64Url encoding implementation
         public static string Base64UrlEncode(byte[] input)
