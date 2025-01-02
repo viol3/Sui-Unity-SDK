@@ -8,12 +8,36 @@ namespace OpenDive.Utils.Jwt
 
     /// <summary>
     /// A class to decode JWT tokens.
+    /// This class only focuses on decoding necessary claims for ZKLogin.
+    /// 
+    /// NOTE: JWT claims fall into three categories – registered, public, or private.
+    ///     > Registered claims are pre-established and publicly documented.
+    ///     Using a registered claim ensures your JWTs will operate smoothly
+    ///     across applications. This is because all libraries recognize these
+    ///     common, standardized claims.
+    ///     > Custom claims (public or private) are claims outside of the registered claims.
+    ///     Public claims: Developers define their own claims and register them
+    ///     with the IANA registry mentioned above. Examples include `auth_time`, `acr` and `nonce`.
+    ///     Private claims: Developers define their own claims but do not publish
+    ///     them. Instead, they make local agreements to ensure operability
+    ///     between private parties.
     /// TODO: Add unit tests
     /// </summary>
     public class JWTDecoder
     {
         /// <summary>
         /// Decodes a JWT token and extracts the header and payload as strongly-typed classes.
+        /// In its compact form, JSON Web Tokens consist of three parts separated by dots (.)
+        ///     > Header - The header typically consists of two parts:
+        ///         the type of the token, which is JWT, and the signing algorithm
+        ///         being used, such as HMAC SHA256 or RSA.
+        ///     > Payload -  The payload, which contains the claims.
+        ///         Claims are statements about an entity (typically, the user)
+        ///         and additional data. There are three types of claims:
+        ///         registered, public, and private claims.
+        ///     > Signature - To create the signature part you have to take the
+        ///         encoded header, the encoded payload, a secret, the algorithm
+        ///         specified in the header, and sign that.
         /// </summary>
         /// <param name="token">The JWT token string</param>
         /// <returns>A JWT object containing the header and payload</returns>
@@ -201,8 +225,9 @@ namespace OpenDive.Utils.Jwt
         public string Jti { get; set; } // JWT ID (unique identifier for the token). Can be used to prevent the JWT from being replayed (allows a token to be used only once)
 
         // <> Public claims </>
-        public long? Auth_time { get; set; } // Authentication time (Unix timestamp)
-        public string Nonce { get; set; }    // * Required for ZK Login. Used instead of `iat` and `exp`.
+        public long? Auth_time { get; set; }    // Authentication time (Unix timestamp)
+        public string ACR { get; set; }        // The Authentication Context Class Reference (ACR) claim is a URI that identifies the authentication context class reference.
+        public string Nonce { get; set; }       // * Required for ZK Login. Used instead of `iat` and `exp`.
 
         // <> Custom claims </>
         public string Email { get; set; }    // Email address
