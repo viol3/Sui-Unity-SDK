@@ -181,14 +181,5 @@ namespace Sui.Tests.ZkLogin
             BigInteger toBigintBE = NonceGenerator.ToBigIntBE(bytes);
             Assert.AreEqual(new BigInteger(0xff), toBigintBE, "BigInteger Value: " + toBigintBE);
         }
-
-        [Test]
-        // TODO: Implement Base64URLEncode test
-        public void Base64UrlEncodeTest()
-        {
-            byte[] bytes = { };
-            string base64UrlEncoded = ZKLogin.JwtUtils.Base64UrlEncode(bytes);
-            throw new NotImplementedException();
-        }
     }
 }
