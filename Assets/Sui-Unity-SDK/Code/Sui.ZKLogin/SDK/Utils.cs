@@ -12,7 +12,12 @@ namespace Sui.ZKLogin.SDK
         private const int MAX_AUD_VALUE_LENGTH = 145;
         private const int PACK_WIDTH = 248;
 
-        // Note: This method would depend on your PublicKey implementation
+        /// <summary>
+        /// TODO: Note: This method would depend on your PublicKey implementation
+        /// Converts a public key to its extended ephemeral form in Sui format.
+        /// </summary>
+        /// <param name="publicKey">The public key to convert.</param>
+        /// <returns>The public key in Sui format as a string.</returns>
         public static string GetExtendedEphemeralPublicKey(PublicKey publicKey)
         {
             return publicKey.ToSuiPublicKey();
@@ -42,7 +47,7 @@ namespace Sui.ZKLogin.SDK
 
         private static BigInteger BytesBEToBigInt(byte[] bytes)
         {
-            if (bytes.Length == 0)
+            if (bytes == null || bytes.Length == 0)
                 return BigInteger.Zero;
 
             string hex = BitConverter.ToString(bytes).Replace("-", "");
@@ -54,9 +59,14 @@ namespace Sui.ZKLogin.SDK
         /// </summary>
         public static BigInteger HashASCIIStrToField(string str, int maxSize)
         {
+            if (string.IsNullOrEmpty(str))
+            {
+                throw new ArgumentNullException(nameof(str));
+            }
+
             if (str.Length > maxSize)
             {
-                throw new Exception($"String {str} is longer than {maxSize} chars");
+                throw new ArgumentException($"String {str} is longer than {maxSize} chars");
             }
 
             // Pad the string with null characters
