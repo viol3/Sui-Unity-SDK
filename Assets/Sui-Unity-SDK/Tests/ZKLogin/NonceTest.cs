@@ -129,58 +129,98 @@ namespace Sui.Tests.ZkLogin
             Assert.AreEqual(nonceExpected, nonce, "RAND: " + randomness.ToString());
         }
 
+        /// <summary>
+        /// Verifies that converting an empty byte array returns BigInteger.Zero.
+        /// This is an edge case test to ensure the method handles empty input gracefully.
+        /// </summary>
         [Test]
-        // Test Case 1: Empty Array
+        [Description("Validates conversion of an empty byte array to BigInteger")]
         public void ToBigIntBETest_EmptyArray()
         {
             byte[] bytes = { };
             BigInteger toBigintBE = NonceGenerator.ToBigIntBE(bytes);
-            Assert.AreEqual(BigInteger.Zero, toBigintBE, "BigInteger Value: " + toBigintBE);
+            Assert.AreEqual(BigInteger.Zero, toBigintBE,
+                "An empty byte array should convert to BigInteger.Zero");
         }
 
+        /// <summary>
+        /// Tests conversion of a single byte to BigInteger.
+        /// Validates that the method correctly interprets a single byte value
+        /// without any endianness concerns.
+        /// </summary>
         [Test]
-        // Test Case 2: Single Byte
+        [Description("Verifies correct conversion of a single byte to BigInteger")]
         public void ToBigIntBETest_SingleByte()
         {
             byte[] bytes = new byte[] { 0x12 };
             BigInteger toBigintBE = NonceGenerator.ToBigIntBE(bytes);
-            Assert.AreEqual(new BigInteger(0x12), toBigintBE, "BigInteger Value: " + toBigintBE);
+            Assert.AreEqual(new BigInteger(0x12), toBigintBE,
+                "Single byte 0x12 should convert to equivalent BigInteger value");
         }
 
+        /// <summary>
+        /// Tests conversion of multiple bytes to BigInteger using big-endian ordering.
+        /// Validates that bytes are interpreted in the correct order: from most significant
+        /// byte (leftmost) to least significant byte (rightmost).
+        /// Example: [0x12, 0x34, 0x56, 0x78] should become 0x12345678
+        /// </summary>
         [Test]
-        // Test Case 3: Multi-byte (Big-Endian Interpretation)
+        [Description("Validates big-endian conversion of multiple bytes to BigInteger")]
         public void ToBigIntBETest_MultiByte()
         {
             byte[] bytes = new byte[] { 0x12, 0x34, 0x56, 0x78 };
             BigInteger toBigintBE = NonceGenerator.ToBigIntBE(bytes);
-            Assert.AreEqual(new BigInteger(0x12345678), toBigintBE, "BigInteger Value: " + toBigintBE);
+            Assert.AreEqual(new BigInteger(0x12345678), toBigintBE,
+                "Bytes should be interpreted in big-endian order (MSB first)");
         }
 
+        /// <summary>
+        /// Tests handling of large numbers with all bytes having significant values.
+        /// Validates correct interpretation of a byte sequence where each byte contributes
+        /// to the final value, including handling of byte values above 0x7F.
+        /// Example: [0xff, 0xee, ..., 0x88] = 0xffeeddccbbaa9988
+        /// </summary>
         [Test]
-        // Test Case 4: Multi-byte with Leading Zeros
+        [Description("Tests conversion of bytes representing a large number with no leading zeros")]
         public void ToBigIntBETest_MultiByte_LeadingZeros()
         {
             byte[] bytes = new byte[] { 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88 };
             BigInteger toBigintBE = NonceGenerator.ToBigIntBE(bytes);
-            Assert.AreEqual(new BigInteger(0xffeeddccbbaa9988), toBigintBE, "BigInteger Value: " + toBigintBE);
+            Assert.AreEqual(new BigInteger(0xffeeddccbbaa9988), toBigintBE,
+                "Should correctly handle large numbers with all significant bytes");
         }
 
+        /// <summary>
+        /// Tests handling of bytes with leading zeros.
+        /// Validates that leading zeros are properly handled in big-endian conversion,
+        /// ensuring they don't affect the numerical value but are respected in the 
+        /// byte ordering.
+        /// Example: [0x00, 0x01, 0x02, 0x03] should become 0x010203
+        /// </summary>
         [Test]
-        // Test Case 5: Large Byte Array
+        [Description("Verifies correct handling of leading zeros in byte array")]
         public void ToBigIntBETest_LargeByteArray()
         {
             byte[] bytes = new byte[] { 0x00, 0x01, 0x02, 0x03 };
             BigInteger toBigintBE = NonceGenerator.ToBigIntBE(bytes);
-            Assert.AreEqual(new BigInteger(0x010203), toBigintBE, "BigInteger Value: " + toBigintBE);
+            Assert.AreEqual(new BigInteger(0x010203), toBigintBE,
+                "Leading zeros should be properly handled in conversion");
         }
 
+        /// <summary>
+        /// Tests conversion of maximum single byte value (0xFF = 255).
+        /// Validates correct handling of the edge case where a single byte
+        /// contains its maximum possible value (all bits set).
+        /// Important for ensuring proper handling of unsigned byte values.
+        /// </summary>
         [Test]
-        // Test Case 6: Maximum Single Byte Value
+        [Description("Tests conversion of maximum possible single byte value")]
         public void ToBigIntBETest_MaximumSingleByteValue()
         {
             byte[] bytes = new byte[] { 0xff };
             BigInteger toBigintBE = NonceGenerator.ToBigIntBE(bytes);
-            Assert.AreEqual(new BigInteger(0xff), toBigintBE, "BigInteger Value: " + toBigintBE);
+            Assert.AreEqual(new BigInteger(0xff), toBigintBE,
+                "Maximum byte value 0xFF should convert to 255");
         }
 
         /// <summary>
