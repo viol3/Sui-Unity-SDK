@@ -29,15 +29,36 @@ namespace Sui.ZKLogin.SDK
             return BigInteger.Parse("0" + hex, System.Globalization.NumberStyles.HexNumber);
         }
 
+        /// <summary>
+        /// Generate random number.
+        /// </summary>
+        /// <returns>A Random big integer number in string format</returns>
         public static string GenerateRandomness()
         {
-            byte[] randomBytes = new byte[16];
-            // TODO: See the impact of using this. TypeScript uses `noble/hashes`
+            return ToBigIntBE(RandomBytes(16)).ToString();
+        }
+
+        /// <summary>
+        /// Generates cryptographically secure random bytes using RNGCryptoServiceProvider.
+        /// This is a similar implementation to the function: `randomBytes` in `@noble/hashes/utils`
+        /// </summary>
+        /// <param name="bytesLength">Number of random bytes to generate.
+        /// Defaults to 32.</param>
+        /// <returns>Array of random bytes</returns>
+        public static byte[] RandomBytes(int bytesLength = 32)
+        {
+            if (bytesLength < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(bytesLength), "Number of bytes cannot be negative");
+            }
+
+            byte[] randomBytes = new byte[bytesLength];
             using (var rng = new RNGCryptoServiceProvider())
             {
                 rng.GetBytes(randomBytes);
             }
-            return ToBigIntBE(randomBytes).ToString();
+            return randomBytes;
         }
 
         /// <summary>
