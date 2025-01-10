@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Sui.Cryptography.Ed25519;
@@ -11,6 +12,9 @@ namespace Sui.ZKLogin.SDK
         private const int MAX_KEY_CLAIM_VALUE_LENGTH = 115;
         private const int MAX_AUD_VALUE_LENGTH = 145;
         private const int PACK_WIDTH = 248;
+
+        // Cache for common calculations
+        private static readonly Dictionary<int, int> _chunkSizeCache = new Dictionary<int, int>();
 
         /// <summary>
         /// TODO: Note: This method would depend on your PublicKey implementation
@@ -56,7 +60,34 @@ namespace Sui.ZKLogin.SDK
 
         /// <summary>
         /// Hashes an ASCII string to a field element
+        /// TODO: This is the original TypeScript implementation. Need to benchmark.
         /// </summary>
+        //public static BigInteger HashASCIIStrToField(string str, int maxSize)
+        //{
+        //    if (string.IsNullOrEmpty(str))
+        //    {
+        //        throw new ArgumentNullException(nameof(str));
+        //    }
+
+        //    if (str.Length > maxSize)
+        //    {
+        //        throw new ArgumentException($"String {str} is longer than {maxSize} chars");
+        //    }
+
+        //    // Pad the string with null characters
+        //    // NOTE in the TypeScript implementation they pad it with `zeroes`
+        //    var strPadded = str.PadRight(maxSize, '\0')
+        //                      .Select(c => (byte)c)
+        //                      .ToArray();
+
+        //    int chunkSize = PACK_WIDTH / 8;
+        //    var packed = ChunkArray(strPadded, chunkSize)
+        //        .Select(chunk => BytesBEToBigInt(chunk))
+        //        .ToArray();
+
+        //    return PoseidonHasher.PoseidonHash(packed);
+        //}
+
         public static BigInteger HashASCIIStrToField(string str, int maxSize)
         {
             if (string.IsNullOrEmpty(str))
@@ -69,16 +100,37 @@ namespace Sui.ZKLogin.SDK
                 throw new ArgumentException($"String {str} is longer than {maxSize} chars");
             }
 
-            // Pad the string with null characters
-            // NOTE in the TypeScript implementation they pad it with `zeroes`
-            var strPadded = str.PadRight(maxSize, '\0')
-                              .Select(c => (byte)c)
-                              .ToArray();
+            // Convert and pad in a single operation
+            byte[] strPadded = new byte[maxSize];
+            for (int i = 0; i < str.Length; i++)
+            {
+                strPadded[i] = (byte)str[i];
+            }
+            // Rest of array is already zeroed by default
 
             int chunkSize = PACK_WIDTH / 8;
-            var packed = ChunkArray(strPadded, chunkSize)
-                .Select(chunk => BytesBEToBigInt(chunk))
-                .ToArray();
+
+            // Use cached chunk count if available
+            if (!_chunkSizeCache.TryGetValue(maxSize, out int numChunks))
+            {
+                numChunks = (int)Math.Ceiling(maxSize / (double)chunkSize);
+                _chunkSizeCache[maxSize] = numChunks;
+            }
+
+            var packed = new BigInteger[numChunks];
+            for (int i = 0; i < numChunks; i++)
+            {
+                int start = maxSize - (i + 1) * chunkSize;
+                int length = Math.Min(chunkSize, maxSize - i * chunkSize);
+                if (start < 0)
+                {
+                    start = 0;
+                    length = maxSize - i * chunkSize;
+                }
+                byte[] chunk = new byte[length];
+                Array.Copy(strPadded, start, chunk, 0, length);
+                packed[numChunks - 1 - i] = BytesBEToBigInt(chunk);
+            }
 
             return PoseidonHasher.PoseidonHash(packed);
         }
