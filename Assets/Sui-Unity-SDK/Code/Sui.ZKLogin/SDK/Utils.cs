@@ -173,5 +173,43 @@ namespace Sui.ZKLogin.SDK
                 PoseidonHasher.PoseidonHash(new[] { salt })
             });
         }
+
+        private static readonly char[] HexChars = "0123456789abcdef".ToCharArray();
+
+        /// <summary>
+        /// Convert byte array to hex string.
+        /// Implementation of bytesToHex from '@noble/hashes/utils';
+        /// Example bytesToHex(Uint8Array.from([0xca, 0xfe, 0x01, 0x23])) // 'cafe0123'
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        /// TODO Incorrect implementation
+        //public static string BytesToHex(byte[] bytes)
+        //{
+        //    char[] hex = new char[bytes.Length * 2 + 2];
+        //    hex[0] = '0';
+        //    hex[1] = 'x';
+
+        //    for (int i = 0; i < bytes.Length; i++)
+        //    {
+        //        hex[i * 2 + 2] = HexChars[bytes[i] >> 4];
+        //        hex[i * 2 + 3] = HexChars[bytes[i] & 0xF];
+        //    }
+        //    return new string(hex);
+        //}
+
+        /// <summary>
+        /// Converts a byte array to a hexadecimal string using a pre-computed lookup table.
+        /// </summary>
+        /// <param name="bytes">The byte array to convert.</param>
+        /// <returns>The hexadecimal representation of the byte array.</returns>
+        /// <example>
+        /// byte[] data = new byte[] { 0xca, 0xfe, 0x01, 0x23 };
+        /// string hex = ByteUtils.BytesToHex(data); // Returns "cafe0123"
+        /// </example>
+        public static string BytesToHex(byte[] bytes)
+        {
+            return BitConverter.ToString(bytes).Replace("-", "").ToLower();
+        }
     }
 }

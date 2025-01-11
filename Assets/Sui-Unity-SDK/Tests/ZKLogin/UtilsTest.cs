@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Numerics;
 using NUnit.Framework;
 using Sui.ZKLogin;
@@ -144,6 +145,68 @@ namespace Sui.Tests.ZkLogin
 
             Assert.AreEqual(1, chunks.Count);
             Assert.AreEqual(new List<int> { 42 }, chunks[0]);
+        }
+
+        [Test]
+        public void BytesToHex_EmptyArray_ReturnsEmptyString()
+        {
+            byte[] bytes = Array.Empty<byte>();
+            string result = ZKLogin.SDK.Utils.BytesToHex(bytes);
+            Assert.That(result, Is.Empty);
+        }
+
+        [Test]
+        public void BytesToHex_SingleByte_ReturnsCorrectHex()
+        {
+            byte[] bytes = { 0xab };
+            string result = ZKLogin.SDK.Utils.BytesToHex(bytes);
+            Assert.That(result, Is.EqualTo("ab"));
+        }
+
+        [Test]
+        public void BytesToHex_MultipleBytesExample_ReturnsCorrectHex()
+        {
+            byte[] bytes = { 0xca, 0xfe, 0x01, 0x23 };
+            string result = ZKLogin.SDK.Utils.BytesToHex(bytes);
+            Assert.That(result, Is.EqualTo("cafe0123"));
+        }
+
+        [Test]
+        public void BytesToHex_ByteWithLeadingZeros_PreservesZeros()
+        {
+            byte[] bytes = { 0x00, 0x01, 0x02 };
+            string result = ZKLogin.SDK.Utils.BytesToHex(bytes);
+            Assert.That(result, Is.EqualTo("000102"));
+        }
+
+        [Test]
+        public void BytesToHex_NullArray_ThrowsArgumentNullException()
+        {
+            Assert.Throws<ArgumentNullException>(() => ZKLogin.SDK.Utils.BytesToHex(null));
+        }
+
+        [Test]
+        public void BytesToHex_MaxByteValue_ReturnsCorrectHex()
+        {
+            byte[] bytes = { 0xFF };
+            string result = ZKLogin.SDK.Utils.BytesToHex(bytes);
+            Assert.That(result, Is.EqualTo("ff"));
+        }
+
+        [Test]
+        public void BytesToHex_MinByteValue_ReturnsCorrectHex()
+        {
+            byte[] bytes = { 0x00 };
+            string result = ZKLogin.SDK.Utils.BytesToHex(bytes);
+            Assert.That(result, Is.EqualTo("00"));
+        }
+
+        [Test]
+        public void BytesToHex_LargeByteArray_ReturnsCorrectHex()
+        {
+            byte[] bytes = new byte[] { 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0 };
+            string result = ZKLogin.SDK.Utils.BytesToHex(bytes);
+            Assert.That(result, Is.EqualTo("123456789abcdef0"));
         }
     }
 }
