@@ -219,6 +219,7 @@ namespace OpenDive.Utils.Jwt
         public string Iss { get; set; } // * Issuer of the JWT. Required for ZK Login.
         public string Sub { get; set; } // * Subject of the JWT (the user). Required for ZK Login.
         public string Aud { get; set; } // Recipient for which the JWT is intended
+        public string Azp { get; set; } // Authorized party - the party to which the ID Token was issued
         public long? Exp { get; set; }  // Time after which the JWT expires
         public long? Nbf { get; set; }  // Time before which the JWT must not be accepted for processing (Unix timestamp)
         public long? Iat { get; set; }  // Issued at .. Time at which the JWT was issued; can be used to determine age of the JWT (Unix timestamp)
