@@ -57,25 +57,25 @@ namespace Sui.Tests.Cryptography
             // Test case 1: Basic conversion
             Assert.AreEqual(
                 new byte[] { 0 },
-                ZKLogin.Utils.ToPaddedBigEndianBytes(BigInteger.Parse("0"), 1)
+                ZKLogin.SDK.Utils.ToPaddedBigEndianBytes(BigInteger.Parse("0"), 1)
             );
 
             // Test case 2: Max single byte
             Assert.AreEqual(
                 new byte[] { 255 },
-                ZKLogin.Utils.ToPaddedBigEndianBytes(BigInteger.Parse("255"), 1)
+                ZKLogin.SDK.Utils.ToPaddedBigEndianBytes(BigInteger.Parse("255"), 1)
             );
 
             // Test case 3: Two bytes
             Assert.AreEqual(
                 new byte[] { 1, 0 },
-                ZKLogin.Utils.ToPaddedBigEndianBytes(BigInteger.Parse("256"), 2)
+                ZKLogin.SDK.Utils.ToPaddedBigEndianBytes(BigInteger.Parse("256"), 2)
             );
 
             // Test case 4: Max two bytes
             Assert.AreEqual(
                 new byte[] { 255, 255 },
-                ZKLogin.Utils.ToPaddedBigEndianBytes(BigInteger.Parse("65535"), 2)
+                ZKLogin.SDK.Utils.ToPaddedBigEndianBytes(BigInteger.Parse("65535"), 2)
             );
         }
 
@@ -83,12 +83,12 @@ namespace Sui.Tests.Cryptography
         public void ToPaddedBigEndianBytes_ShouldPadWithZeros()
         {
             // Test case 1: Padding small number to 4 bytes
-            byte[] result1 = ZKLogin.Utils.ToPaddedBigEndianBytes(BigInteger.Parse("255"), 4);
+            byte[] result1 = ZKLogin.SDK.Utils.ToPaddedBigEndianBytes(BigInteger.Parse("255"), 4);
             Assert.AreEqual(4, result1.Length);
             CollectionAssert.AreEqual(new byte[] { 0, 0, 0, 255 }, result1);
 
             // Test case 2: Padding medium number to 4 bytes
-            byte[] result2 = ZKLogin.Utils.ToPaddedBigEndianBytes(BigInteger.Parse("65535"), 4);
+            byte[] result2 = ZKLogin.SDK.Utils.ToPaddedBigEndianBytes(BigInteger.Parse("65535"), 4);
             Assert.AreEqual(4, result2.Length);
             CollectionAssert.AreEqual(new byte[] { 0, 0, 255, 255 }, result2);
         }
@@ -97,19 +97,19 @@ namespace Sui.Tests.Cryptography
         public void FindFirstNonZeroIndex_ShouldFindCorrectIndex()
         {
             // Test case 1: Leading zeros
-            Assert.AreEqual(2, ZKLogin.Utils.FindFirstNonZeroIndex(new byte[] { 0, 0, 1, 2 }));
+            Assert.AreEqual(2, ZKLogin.SDK.Utils.FindFirstNonZeroIndex(new byte[] { 0, 0, 1, 2 }));
 
             // Test case 2: No leading zeros
-            Assert.AreEqual(0, ZKLogin.Utils.FindFirstNonZeroIndex(new byte[] { 1, 2, 3, 4 }));
+            Assert.AreEqual(0, ZKLogin.SDK.Utils.FindFirstNonZeroIndex(new byte[] { 1, 2, 3, 4 }));
 
             // Test case 3: All zeros
-            Assert.AreEqual(-1, ZKLogin.Utils.FindFirstNonZeroIndex(new byte[] { 0, 0, 0, 0 }));
+            Assert.AreEqual(-1, ZKLogin.SDK.Utils.FindFirstNonZeroIndex(new byte[] { 0, 0, 0, 0 }));
 
             // Test case 4: Single zero
-            Assert.AreEqual(-1, ZKLogin.Utils.FindFirstNonZeroIndex(new byte[] { 0 }));
+            Assert.AreEqual(-1, ZKLogin.SDK.Utils.FindFirstNonZeroIndex(new byte[] { 0 }));
 
             // Test case 5: Single non-zero
-            Assert.AreEqual(0, ZKLogin.Utils.FindFirstNonZeroIndex(new byte[] { 1 }));
+            Assert.AreEqual(0, ZKLogin.SDK.Utils.FindFirstNonZeroIndex(new byte[] { 1 }));
         }
 
         [Test]
@@ -118,32 +118,32 @@ namespace Sui.Tests.Cryptography
             // Test case 1: Zero should return single zero byte
             CollectionAssert.AreEqual(
                 new byte[] { 0 },
-                ZKLogin.Utils.ToBigEndianBytes(BigInteger.Parse("0"), 4)
+                ZKLogin.SDK.Utils.ToBigEndianBytes(BigInteger.Parse("0"), 4)
             );
 
             // Test case 2: Single byte number
             CollectionAssert.AreEqual(
                 new byte[] { 255 },
-                ZKLogin.Utils.ToBigEndianBytes(BigInteger.Parse("255"), 4)
+                ZKLogin.SDK.Utils.ToBigEndianBytes(BigInteger.Parse("255"), 4)
             );
 
             // Test case 3: Two byte number
             CollectionAssert.AreEqual(
                 new byte[] { 1, 0 },
-                ZKLogin.Utils.ToBigEndianBytes(BigInteger.Parse("256"), 4)
+                ZKLogin.SDK.Utils.ToBigEndianBytes(BigInteger.Parse("256"), 4)
             );
 
             // Test case 4: Max two bytes
             CollectionAssert.AreEqual(
                 new byte[] { 255, 255 },
-                ZKLogin.Utils.ToBigEndianBytes(BigInteger.Parse("65535"), 4)
+                ZKLogin.SDK.Utils.ToBigEndianBytes(BigInteger.Parse("65535"), 4)
             );
         }
 
         [Test]
         public void ToBigEndianBytes_ShouldReturnSingleZeroForZero()
         {
-            byte[] result = ZKLogin.Utils.ToBigEndianBytes(BigInteger.Zero, 4);
+            byte[] result = ZKLogin.SDK.Utils.ToBigEndianBytes(BigInteger.Zero, 4);
             Assert.AreEqual(1, result.Length);
             Assert.AreEqual(0, result[0]);
         }
@@ -156,7 +156,7 @@ namespace Sui.Tests.Cryptography
             int width = 32;
 
             // Act
-            byte[] result = ZKLogin.Utils.ToPaddedBigEndianBytes(num, width);
+            byte[] result = ZKLogin.SDK.Utils.ToPaddedBigEndianBytes(num, width);
 
             // Assert
             Assert.AreEqual(width, result.Length);

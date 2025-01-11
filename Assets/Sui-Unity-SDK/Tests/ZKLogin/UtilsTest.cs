@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Numerics;
 using NUnit.Framework;
-using Sui.ZKLogin;
+using Sui.ZKLogin.SDK;
 
 namespace Sui.Tests.ZkLogin
 {

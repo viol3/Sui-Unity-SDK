@@ -133,7 +133,7 @@ namespace Sui.ZKLogin.SDK
         )
         {
             // Consists of iss_bytes_len || iss_bytes || padded_32_byte_address_seed.
-            byte[] addressSeedBytesBigEndian = ZKLogin.Utils.ToPaddedBigEndianBytes(addressSeed, 32);
+            byte[] addressSeedBytesBigEndian = ZKLogin.SDK.Utils.ToPaddedBigEndianBytes(addressSeed, 32);
             byte[] issBytes = Encoding.UTF8.GetBytes(iss);
 
             byte[] tmp = new byte[1 + issBytes.Length + addressSeedBytesBigEndian.Length];

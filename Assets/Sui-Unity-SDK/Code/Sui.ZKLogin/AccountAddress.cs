@@ -45,7 +45,7 @@ namespace Sui.ZKLogin
         {
             // TS: bytesToHex(blake2b(tmp, { dkLen: 32 })).slice(0, SUI_ADDRESS_LENGTH * 2),
             // string hex = BitConverter.ToString(bytes);
-            byte[] addressSeedBytesBigEndian = Utils.ToBigEndianBytes(addressSeed, 32);
+            byte[] addressSeedBytesBigEndian = SDK.Utils.ToBigEndianBytes(addressSeed, 32);
 
             // Normalize Google issuer
             if (iss == "accounts.google.com")
