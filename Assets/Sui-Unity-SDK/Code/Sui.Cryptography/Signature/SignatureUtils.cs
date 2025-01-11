@@ -208,7 +208,7 @@ namespace Sui.Cryptography
             { SignatureScheme.Secp256k1,    0x01 },
             { SignatureScheme.Secp256r1,    0x02 },
             { SignatureScheme.MultiSig,     0x03 },
-            { SignatureScheme.ZkLogin,           0x05 }
+            { SignatureScheme.ZkLogin,      0x05 }
         };
 
         /// <summary>
