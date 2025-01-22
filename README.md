@@ -61,6 +61,13 @@ We envision a tool that not only provides the flexibility and customization for 
 - [x] Comprehensive Unit and Integration Test coverage.
 - [x] [ZK Login](https://docs.sui.io/concepts/cryptography/zklogin)
 
+### Running End-to-End Test
+The SDK contains a test suite that leverages a local instance of the the Sui client. Prior to running the tests please install the Sui client and run the following command:
+
+```
+RUST_LOG="off,sui_node=info" sui start --with-faucet --force-regenesis --with-indexer
+```
+
 ### On ZK Login
 
 >  zkLogin is a two-factor authentication scheme; sending a transaction requires both a credential from a recent OAuth login and a salt not managed by the OAuth provider. An attacker who compromises an OAuth account cannot transact from the user's corresponding Sui address unless they separately compromise the salt.
