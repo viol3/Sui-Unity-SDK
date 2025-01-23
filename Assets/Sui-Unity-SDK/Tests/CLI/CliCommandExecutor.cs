@@ -9,6 +9,12 @@ using UnityEngine.TestTools;
 
 namespace Sui.Tests.CLI
 {
+    /// <summary>
+    /// Calls sui node programmatically.
+    /// <code>
+    ///     RUST_LOG="off,sui_node=info" sui start --with-faucet --force-regenesis --with-indexer
+    /// </code>
+    /// </summary>
     public class CliCommandExecutor
     {
         public class CommandResult
