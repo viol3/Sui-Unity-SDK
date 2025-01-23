@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using Sui.Cryptography.Ed25519;
+using UnityEngine;
 
 namespace Sui.ZKLogin.SDK
 {
@@ -108,19 +110,19 @@ namespace Sui.ZKLogin.SDK
         /// <returns>A list of chunks, where each chunk is a list of elements.</returns>
         public static List<List<T>> ChunkArray<T>(T[] array, int chunkSize)
         {
-            if (array == null || chunkSize <= 0)
-                throw new ArgumentException("Invalid array or chunk size");
-
+            var reversed = array.Reverse().ToArray();
             var chunks = new List<List<T>>();
-            int totalChunks = (array.Length + chunkSize - 1) / chunkSize; // Ceiling division
+            int totalChunks = (array.Length + chunkSize - 1) / chunkSize;
 
             for (int i = 0; i < totalChunks; i++)
             {
-                int start = i * chunkSize;
-                int end = Math.Min(start + chunkSize, array.Length);
-                chunks.Add(array.Skip(start).Take(end - start).ToList());
+                chunks.Add(reversed.Skip(i * chunkSize)
+                                  .Take(chunkSize)
+                                  .Reverse()
+                                  .ToList());
             }
 
+            chunks.Reverse();
             return chunks;
         }
 
@@ -132,6 +134,15 @@ namespace Sui.ZKLogin.SDK
             string hex = BitConverter.ToString(bytes).Replace("-", "");
             return BigInteger.Parse("0" + hex, System.Globalization.NumberStyles.HexNumber);
         }
+        //public static BigInteger BytesBEToBigInt(byte[] bytes)
+        //{
+        //    string hex = BitConverter.ToString(bytes).Replace("-", "").ToLower();
+        //    if (hex.Length == 0)
+        //    {
+        //        return BigInteger.Zero;
+        //    }
+        //    return BigInteger.Parse("0" + hex, NumberStyles.HexNumber);
+        //}
 
         /// <summary>
         /// Hashes an ASCII string to a field element
@@ -229,8 +240,10 @@ namespace Sui.ZKLogin.SDK
 
             int chunkSize = PACK_WIDTH / 8;
             var packed = SDK.Utils.ChunkArray(strPadded, chunkSize)
-                .Select(chunk => SDK.Utils.BytesBEToBigInt(chunk.Select(b => (byte)b).ToArray()))
+                .Select(chunk => SDK.Utils.BytesBEToBigInt(chunk.Select(i => (byte)(i & 0xFF)).ToArray()))
                 .ToArray();
+
+            Debug.Log("PACKED LENGTH: " + packed.Length);
 
             return SDK.PoseidonHasher.PoseidonHash(packed);
         }
@@ -328,9 +341,19 @@ namespace Sui.ZKLogin.SDK
             int maxValueLength = MAX_KEY_CLAIM_VALUE_LENGTH,
             int maxAudLength = MAX_AUD_VALUE_LENGTH)
         {
+
+            var saltArr = new BigInteger[] { salt };
+            Debug.Log("SALT ARR LENGTH: " + saltArr.Length);
+
             var saltHash = SDK.PoseidonHasher.PoseidonHash(
-                new List<BigInteger> { salt }.ToArray()
-            );
+                saltArr
+            ); // IRVIN: works
+
+            Debug.Log("POSEIDON HASH SALT: " + saltHash); // IRVIN: works
+
+            Debug.Log("HASH ASCII SUB: " + name + " -- " + maxNameLength + " --- " + HashASCIIStrToField(name, maxNameLength));
+            Debug.Log("HASH ASCII VALUE: " + value + " -- " + maxValueLength + " --- " + HashASCIIStrToField(value, maxValueLength));
+            Debug.Log("HASH ASCII AUD: " + aud + " -- " + maxAudLength + " --- " + HashASCIIStrToField(aud, maxAudLength));
 
             return SDK.PoseidonHasher.PoseidonHash(
                 new List<BigInteger>
