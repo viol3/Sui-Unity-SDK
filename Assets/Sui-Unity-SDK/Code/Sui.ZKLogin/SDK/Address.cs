@@ -19,22 +19,6 @@ namespace Sui.ZKLogin.SDK
         public const int MAX_HEADER_LEN_B64 = 248;
         public const int MAX_PADDED_UNSIGNED_JWT_LEN = 64 * 25;
 
-        //private static readonly char[] HexChars = "0123456789abcdef".ToCharArray();
-
-        //private static string BytesToHex(byte[] bytes)
-        //{
-        //    char[] hex = new char[bytes.Length * 2 + 2];
-        //    hex[0] = '0';
-        //    hex[1] = 'x';
-
-        //    for (int i = 0; i < bytes.Length; i++)
-        //    {
-        //        hex[i * 2 + 2] = HexChars[bytes[i] >> 4];
-        //        hex[i * 2 + 3] = HexChars[bytes[i] & 0xF];
-        //    }
-        //    return new string(hex);
-        //}
-
         /// <summary>
         /// Computes a ZkLogin address from an address seed and issuer.
         /// </summary>
@@ -68,11 +52,8 @@ namespace Sui.ZKLogin.SDK
             Debug.Log(" BLAKE2HASH LENGTH: " + hash.Length + " HASH: " + hash.ToString());
 
             Accounts.AccountAddress address = new Accounts.AccountAddress(hash);
-            //return address.ToString();
             return address.KeyHex;
 
-            //return Utils.BytesToHex(hash);
-            //return Utils.BytesToHex(hash).Substring(0, 32 * 2);
         }
 
         /// <summary>
@@ -137,8 +118,6 @@ namespace Sui.ZKLogin.SDK
 
         public static string ComputeZkLoginAddress(ZkLoginAddressOptions options)
         {
-            //var seed = BigInteger.Parse("6320033262267591434792934173917659296377585423834478563244217901081449450162");
-
             var seed = Utils.GenAddressSeed(
                 options.UserSalt,
                 options.ClaimName,
@@ -146,58 +125,12 @@ namespace Sui.ZKLogin.SDK
                 options.Aud
             );
 
-            Debug.Log("USER SALT: " + options.UserSalt
-                + "\nCLAIM NAME: " + options.ClaimName
-                + "\nCLAIM VALUE: " + options.ClaimValue
-                + "\nAUD: " + options.Aud);
-
-            Debug.Log("ADDRESS SEED: " + seed);
-
             return ComputeZkLoginAddressFromSeed(
                 seed,
                 options.Iss,
                 options.LegacyAddress
             );
         }
-
-        ///// <summary>
-        ///// 
-        ///// </summary>
-        ///// <param name="userSalt"></param>
-        ///// <param name="claimName"></param>
-        ///// <param name="claimValue"></param>
-        ///// <param name="aud"></param>
-        ///// <returns></returns>
-        //private static BigInteger GenAddressSeed(string userSalt, string claimName, string claimValue, string aud)
-        //{
-        //    using var sha256 = SHA256.Create();
-        //    var saltBytes = Encoding.UTF8.GetBytes(userSalt);
-        //    var claimBytes = Encoding.UTF8.GetBytes($"{claimName}:{claimValue}:{aud}");
-
-        //    var combined = new byte[saltBytes.Length + claimBytes.Length];
-        //    Buffer.BlockCopy(saltBytes, 0, combined, 0, saltBytes.Length);
-        //    Buffer.BlockCopy(claimBytes, 0, combined, saltBytes.Length, claimBytes.Length);
-
-        //    var hash = sha256.ComputeHash(combined);
-        //    return new BigInteger(hash);
-        //}
-
-        /// <summary>
-        /// Computes a ZkLogin address from an address seed and issuer.
-        /// </summary>
-        //private static string ComputeZkLoginAddressFromSeed(BigInteger seed, string iss)
-        //{
-        //    using var sha256 = SHA256.Create();
-        //    var issBytes = Encoding.UTF8.GetBytes(iss);
-        //    var seedBytes = seed.ToByteArray();
-
-        //    var combined = new byte[seedBytes.Length + issBytes.Length];
-        //    Buffer.BlockCopy(seedBytes, 0, combined, 0, seedBytes.Length);
-        //    Buffer.BlockCopy(issBytes, 0, combined, seedBytes.Length, issBytes.Length);
-
-        //    var hash = sha256.ComputeHash(combined);
-        //    return BytesToHex(hash);
-        //}
     }
 
     public class ZkLoginAddressOptions

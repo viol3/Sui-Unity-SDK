@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using Sui.Cryptography.Ed25519;
@@ -79,28 +78,6 @@ namespace Sui.ZKLogin.SDK
         }
 
         /// <summary>
-        /// Splits an array into chunks of size chunkSize. If the array is not evenly
-        /// divisible by chunkSize, the first chunk will be smaller than chunkSize.
-        /// </summary>
-        //public static T[][] ChunkArray<T>(T[] array, int chunkSize)
-        //{
-        //    var reversed = array.Reverse().ToArray();
-        //    int chunksCount = (int)Math.Ceiling(array.Length / (double)chunkSize);
-        //    var chunks = new T[chunksCount][];
-
-        //    for (int i = 0; i < chunksCount; i++)
-        //    {
-        //        chunks[i] = reversed.Skip(i * chunkSize)
-        //                          .Take(chunkSize)
-        //                          .Reverse()
-        //                          .ToArray();
-        //    }
-
-        //    Array.Reverse(chunks);
-        //    return chunks;
-        //}
-
-        /// <summary>
         /// Splits an array into chunks of a specified size. If the array is not evenly divisible
         /// by chunkSize, the first chunk will be smaller than chunkSize.
         /// </summary>
@@ -134,93 +111,7 @@ namespace Sui.ZKLogin.SDK
             string hex = BitConverter.ToString(bytes).Replace("-", "");
             return BigInteger.Parse("0" + hex, System.Globalization.NumberStyles.HexNumber);
         }
-        //public static BigInteger BytesBEToBigInt(byte[] bytes)
-        //{
-        //    string hex = BitConverter.ToString(bytes).Replace("-", "").ToLower();
-        //    if (hex.Length == 0)
-        //    {
-        //        return BigInteger.Zero;
-        //    }
-        //    return BigInteger.Parse("0" + hex, NumberStyles.HexNumber);
-        //}
-
-        /// <summary>
-        /// Hashes an ASCII string to a field element
-        /// TODO: This is the original TypeScript implementation. Need to benchmark.
-        /// </summary>
-        //public static BigInteger HashASCIIStrToField(string str, int maxSize)
-        //{
-        //    if (string.IsNullOrEmpty(str))
-        //    {
-        //        throw new ArgumentNullException(nameof(str));
-        //    }
-
-        //    if (str.Length > maxSize)
-        //    {
-        //        throw new ArgumentException($"String {str} is longer than {maxSize} chars");
-        //    }
-
-        //    // Pad the string with null characters
-        //    // NOTE in the TypeScript implementation they pad it with `zeroes`
-        //    var strPadded = str.PadRight(maxSize, '\0')
-        //                      .Select(c => (byte)c)
-        //                      .ToArray();
-
-        //    int chunkSize = PACK_WIDTH / 8;
-        //    var packed = ChunkArray(strPadded, chunkSize)
-        //        .Select(chunk => BytesBEToBigInt(chunk))
-        //        .ToArray();
-
-        //    return PoseidonHasher.PoseidonHash(packed);
-        //}
-
-        //public static BigInteger HashASCIIStrToField(string str, int maxSize)
-        //{
-        //    if (string.IsNullOrEmpty(str))
-        //    {
-        //        throw new ArgumentNullException(nameof(str));
-        //    }
-
-        //    if (str.Length > maxSize)
-        //    {
-        //        throw new ArgumentException($"String {str} is longer than {maxSize} chars");
-        //    }
-
-        //    // Convert and pad in a single operation
-        //    byte[] strPadded = new byte[maxSize];
-        //    for (int i = 0; i < str.Length; i++)
-        //    {
-        //        strPadded[i] = (byte)str[i];
-        //    }
-        //    // Rest of array is already zeroed by default
-
-        //    int chunkSize = PACK_WIDTH / 8;
-
-        //    // Use cached chunk count if available
-        //    if (!_chunkSizeCache.TryGetValue(maxSize, out int numChunks))
-        //    {
-        //        numChunks = (int)Math.Ceiling(maxSize / (double)chunkSize);
-        //        _chunkSizeCache[maxSize] = numChunks;
-        //    }
-
-        //    var packed = new BigInteger[numChunks];
-        //    for (int i = 0; i < numChunks; i++)
-        //    {
-        //        int start = maxSize - (i + 1) * chunkSize;
-        //        int length = Math.Min(chunkSize, maxSize - i * chunkSize);
-        //        if (start < 0)
-        //        {
-        //            start = 0;
-        //            length = maxSize - i * chunkSize;
-        //        }
-        //        byte[] chunk = new byte[length];
-        //        Array.Copy(strPadded, start, chunk, 0, length);
-        //        packed[numChunks - 1 - i] = BytesBEToBigInt(chunk);
-        //    }
-
-        //    return PoseidonHasher.PoseidonHash(packed);
-        //}
-
+        
         /// <summary>
         /// TODO: Add test.
         /// Hashes an ASCII string to a field element.
@@ -245,47 +136,8 @@ namespace Sui.ZKLogin.SDK
 
             Debug.Log("PACKED LENGTH: " + packed.Length);
 
-            return SDK.PoseidonHasher.PoseidonHash(packed);
+            return PoseidonHasher.PoseidonHash(packed);
         }
-
-        //public static BigInteger GenAddressSeed(
-        //    string salt,
-        //    string name,
-        //    string value,
-        //    string aud,
-        //    int maxNameLength = MAX_KEY_CLAIM_NAME_LENGTH,
-        //    int maxValueLength = MAX_KEY_CLAIM_VALUE_LENGTH,
-        //    int maxAudLength = MAX_AUD_VALUE_LENGTH)
-        //{
-        //    var saltBigInt = BigInteger.Parse(salt);
-
-        //    return PoseidonHasher.PoseidonHash(new[]
-        //    {
-        //        HashASCIIStrToField(name, maxNameLength),
-        //        HashASCIIStrToField(value, maxValueLength),
-        //        HashASCIIStrToField(aud, maxAudLength),
-        //        PoseidonHasher.PoseidonHash(new[] { saltBigInt })
-        //    });
-        //}
-
-        //// Overload for when salt is already a BigInteger
-        //public static BigInteger GenAddressSeed(
-        //    BigInteger salt,
-        //    string name,
-        //    string value,
-        //    string aud,
-        //    int maxNameLength = MAX_KEY_CLAIM_NAME_LENGTH,
-        //    int maxValueLength = MAX_KEY_CLAIM_VALUE_LENGTH,
-        //    int maxAudLength = MAX_AUD_VALUE_LENGTH)
-        //{
-        //    return PoseidonHasher.PoseidonHash(new[]
-        //    {
-        //        HashASCIIStrToField(name, maxNameLength),
-        //        HashASCIIStrToField(value, maxValueLength),
-        //        HashASCIIStrToField(aud, maxAudLength),
-        //        PoseidonHasher.PoseidonHash(new[] { salt })
-        //    });
-        //}
 
         /// <summary>
         /// Generates an address seed based on provided parameters.
@@ -343,17 +195,10 @@ namespace Sui.ZKLogin.SDK
         {
 
             var saltArr = new BigInteger[] { salt };
-            Debug.Log("SALT ARR LENGTH: " + saltArr.Length);
 
-            var saltHash = SDK.PoseidonHasher.PoseidonHash(
+            var saltHash = PoseidonHasher.PoseidonHash(
                 saltArr
-            ); // IRVIN: works
-
-            Debug.Log("POSEIDON HASH SALT: " + saltHash); // IRVIN: works
-
-            Debug.Log("HASH ASCII SUB: " + name + " -- " + maxNameLength + " --- " + HashASCIIStrToField(name, maxNameLength));
-            Debug.Log("HASH ASCII VALUE: " + value + " -- " + maxValueLength + " --- " + HashASCIIStrToField(value, maxValueLength));
-            Debug.Log("HASH ASCII AUD: " + aud + " -- " + maxAudLength + " --- " + HashASCIIStrToField(aud, maxAudLength));
+            );
 
             return SDK.PoseidonHasher.PoseidonHash(
                 new List<BigInteger>
@@ -365,30 +210,6 @@ namespace Sui.ZKLogin.SDK
                 }.ToArray()
             );
         }
-
-        //private static readonly char[] HexChars = "0123456789abcdef".ToCharArray();
-
-        /// <summary>
-        /// Convert byte array to hex string.
-        /// Implementation of bytesToHex from '@noble/hashes/utils';
-        /// Example bytesToHex(Uint8Array.from([0xca, 0xfe, 0x01, 0x23])) // 'cafe0123'
-        /// </summary>
-        /// <param name="bytes"></param>
-        /// <returns></returns>
-        /// TODO Incorrect implementation
-        //public static string BytesToHex(byte[] bytes)
-        //{
-        //    char[] hex = new char[bytes.Length * 2 + 2];
-        //    hex[0] = '0';
-        //    hex[1] = 'x';
-
-        //    for (int i = 0; i < bytes.Length; i++)
-        //    {
-        //        hex[i * 2 + 2] = HexChars[bytes[i] >> 4];
-        //        hex[i * 2 + 3] = HexChars[bytes[i] & 0xF];
-        //    }
-        //    return new string(hex);
-        //}
 
         /// <summary>
         /// Converts a byte array to a hexadecimal string using a pre-computed lookup table.
