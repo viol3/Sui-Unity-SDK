@@ -7,7 +7,6 @@ namespace Sui.ZKLogin.SDK
 {
     /// <summary>
     /// TODO: See if there are any issues with using RNGCryptoServiceProvider on mobile or WebGL
-    /// TODO: See how TS implements this. Perhaps we can use a difference source of randomness.
     /// </summary>
     public static class NonceGenerator
     {
@@ -120,7 +119,7 @@ namespace Sui.ZKLogin.SDK
                 randomness
             });
 
-            byte[] Z = ZKLogin.Utils.ToPaddedBigEndianBytes(bigNum, 20);
+            byte[] Z = Utils.ToPaddedBigEndianBytes(bigNum, 20);
             string nonce = JwtUtils.Base64UrlEncode(Z);
 
             if (nonce.Length != NONCE_LENGTH)
