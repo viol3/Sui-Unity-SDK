@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.IO;
 using System.Diagnostics;
 using System.Collections;
 using System.Collections.Generic;
@@ -26,8 +27,32 @@ namespace Sui.Tests.CLI
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
-                CreateNoWindow = true
+                CreateNoWindow = true,
+                WorkingDirectory = Application.dataPath + "/.."
             };
+
+            // Copy current environment PATH
+            var path = Environment.GetEnvironmentVariable("PATH");
+            UnityEngine.Debug.Log($"Current PATH: {path}");
+
+            // Add common Sui installation paths
+            var additionalPaths = new[]
+            {
+                "/usr/local/bin",                    // Common Unix path
+                "/opt/homebrew/bin",                 // Homebrew on Apple Silicon
+                "/usr/local/Homebrew/bin",           // Homebrew on Intel Mac
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/.cargo/bin"  // Rust/Cargo bin
+            };
+
+            foreach (var additionalPath in additionalPaths)
+            {
+                if (!path.Contains(additionalPath))
+                {
+                    path = $"{additionalPath}{Path.PathSeparator}{path}";
+                }
+            }
+
+            startInfo.EnvironmentVariables["PATH"] = path;
 
             if (environmentVariables != null)
             {
@@ -42,17 +67,25 @@ namespace Sui.Tests.CLI
 
             try
             {
+                UnityEngine.Debug.Log($"Executing command: {command} {args}");
                 process.Start();
                 result.Output = process.StandardOutput.ReadToEnd();
                 result.Error = process.StandardError.ReadToEnd();
                 process.WaitForExit();
                 result.ExitCode = process.ExitCode;
+
+                UnityEngine.Debug.Log($"Command output: {result.Output}");
+                if (!string.IsNullOrEmpty(result.Error))
+                {
+                    UnityEngine.Debug.LogError($"Command error: {result.Error}");
+                }
+                UnityEngine.Debug.Log($"Exit code: {result.ExitCode}");
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.Log("PROCESS ERROR: " + ex.ToString());
                 result.Error = ex.ToString();
                 result.ExitCode = -1;
+                UnityEngine.Debug.LogError($"Exception executing command: {ex}");
             }
 
             return result;
@@ -60,6 +93,15 @@ namespace Sui.Tests.CLI
 
         public static string GetCommandFileName(string command)
         {
+            // If we can find the command in PATH, use it directly
+            var suiPath = GetFullPath(command);
+            if (!string.IsNullOrEmpty(suiPath))
+            {
+                UnityEngine.Debug.Log($"Found {command} at: {suiPath}");
+                return suiPath;
+            }
+
+            // Fallback to shell if direct command not found
             if (IsWindows())
             {
                 return "cmd.exe";
@@ -69,11 +111,52 @@ namespace Sui.Tests.CLI
 
         public static string GetCommandArguments(string command, string args)
         {
+            var fullPath = GetFullPath(command);
+            if (!string.IsNullOrEmpty(fullPath))
+            {
+                // Direct execution - just pass the arguments as is
+                return args;
+            }
+
+            // Shell wrapping only if we couldn't find the direct path
             if (IsWindows())
             {
                 return $"/c {command} {args}";
             }
             return $"-c \"{command} {args}\"";
+        }
+
+        private static string GetFullPath(string command)
+        {
+            // Common installation paths
+            var searchPaths = new List<string>
+            {
+                "/usr/local/bin",                    // Common Unix path
+                "/opt/homebrew/bin",                 // Homebrew on Apple Silicon
+                "/usr/local/Homebrew/bin",           // Homebrew on Intel Mac
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cargo/bin")  // Rust/Cargo bin
+            };
+
+            // Add PATH environment paths
+            searchPaths.AddRange(Environment.GetEnvironmentVariable("PATH").Split(Path.PathSeparator));
+
+            foreach (var path in searchPaths)
+            {
+                if (string.IsNullOrEmpty(path)) continue;
+
+                var fullPath = Path.Combine(path, command);
+                if (IsWindows() && !fullPath.EndsWith(".exe"))
+                {
+                    fullPath += ".exe";
+                }
+
+                if (File.Exists(fullPath))
+                {
+                    return fullPath;
+                }
+            }
+
+            return string.Empty;
         }
 
         private static bool IsWindows()
@@ -93,11 +176,11 @@ namespace Sui.Tests.CLI
 
             // Check if Sui is installed
             var versionResult = CliCommandExecutor.ExecuteCommand("sui", "--version");
-            UnityEngine.Debug.Log($"VERSION RESULT: {versionResult.Output}");
+            UnityEngine.Debug.Log($"Version check exit code: {versionResult.ExitCode}");
             if (versionResult.ExitCode != 0)
             {
                 throw new Exception(
-                    "Sui CLI is not installed or not in PATH. " +
+                    $"Sui CLI check failed. Error: {versionResult.Error}\n" +
                     "Please install Sui first (https://docs.sui.io/build/install)"
                 );
             }
@@ -109,10 +192,14 @@ namespace Sui.Tests.CLI
                 { "RUST_LOG", "off,sui_node=info" }
             };
 
+            // The complete command: RUST_LOG="off,sui_node=info" sui start --with-faucet --force-regenesis --with-indexer
+            var startArgs = "start --with-faucet --force-regenesis --with-indexer";
+            UnityEngine.Debug.Log($"Starting Sui node with arguments: {startArgs}");
+
             var startInfo = new ProcessStartInfo
             {
                 FileName = CliCommandExecutor.GetCommandFileName("sui"),
-                Arguments = CliCommandExecutor.GetCommandArguments("sui", "start --with-faucet --force-regenesis --with-indexer"),
+                Arguments = startArgs,  // Direct arguments without shell wrapping
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -201,12 +288,12 @@ namespace Sui.Tests.CLI
         }
     }
 
-    public class YourActualTests : SuiNodeTests
+    public class DummyTests : SuiNodeTests
     {
         [UnityTest]
         public IEnumerator TestSuiNodeInteraction()
         {
-            // Your test code here
+            // Test code here
             yield return null;
             Assert.Pass();
         }
