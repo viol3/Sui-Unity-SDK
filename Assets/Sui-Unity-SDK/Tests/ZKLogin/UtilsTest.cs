@@ -321,5 +321,40 @@ namespace Sui.Tests.ZkLogin
             string result = ZKLogin.SDK.Utils.BytesToHex(bytes);
             Assert.That(result, Is.EqualTo("123456789abcdef0"));
         }
+
+        [Test]
+        public void HashASCIIStrToField_ClaimNameValue_AUD_Returns_ExpectedHash()
+        {
+            BigInteger result = Utils.HashASCIIStrToField("sub", 32);
+            BigInteger expected = BigInteger.Parse("9102752833182448263444250585012134730074321235810986230287216596098480554553");
+            Assert.That(result, Is.EqualTo(expected));
+
+            result = Utils.HashASCIIStrToField("106286931906362609286", 115);
+            expected = BigInteger.Parse("2352939069770256775234829048624339326695552050355924727369814598468708852850");
+            Assert.That(result, Is.EqualTo(expected));
+
+            result = Utils.HashASCIIStrToField("573120070871-0k7ga6ns79ie0jpg1ei6ip5vje2ostt6.apps.googleusercontent.com", 145);
+            expected = BigInteger.Parse("21206880572761796382621760317640694562316540269674130237534171623788609905211");
+            Assert.That(result, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void HashASCIIStrToField_EmptyString_Returns_ValidHash()
+        {
+            Assert.DoesNotThrow(() => Utils.HashASCIIStrToField("", 32));
+        }
+
+        [TestCase("test", 3)]
+        [TestCase("toolong", 5)]
+        public void HashASCIIStrToField_StringLongerThanMaxSize_ThrowsException(string input, int maxSize)
+        {
+            Assert.Throws<ArgumentException>(() => Utils.HashASCIIStrToField(input, maxSize));
+        }
+
+        [Test]
+        public void HashASCIIStrToField_StringWithSpecialChars_Returns_ValidHash()
+        {
+            Assert.DoesNotThrow(() => Utils.HashASCIIStrToField("test@123!", 32));
+        }
     }
 }
