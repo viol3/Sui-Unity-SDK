@@ -199,7 +199,8 @@ namespace Sui.Tests.CLI
             };
 
             // The complete command: RUST_LOG="off,sui_node=info" sui start --with-faucet --force-regenesis --with-indexer
-            var startArgs = "start --with-faucet --force-regenesis --with-indexer";
+            //var startArgs = "start --with-faucet --force-regenesis --with-indexer";
+            var startArgs = "start --with-faucet --force-regenesis";
             UnityEngine.Debug.Log($"Starting Sui node with arguments: {startArgs}");
 
             var startInfo = new ProcessStartInfo
