@@ -153,31 +153,77 @@ namespace Sui.ZKLogin
             return Encoding.UTF8.GetString(bytes);
         }
 
+        [Serializable]
+        private class ClaimWrapper
+        {
+            public string key;
+            public string value;
+        }
+
+
         /// <summary>
         /// Verifies and extracts the key-value pair from a claim string
         /// </summary>
         /// <param name="claim">The claim string to verify</param>
         /// <returns>A tuple containing the key and value from the claim</returns>
         /// <exception cref="ArgumentException">Thrown when the claim format is invalid</exception>
+        //private static (string key, string value) VerifyExtendedClaim(string claim)
+        //{
+        //    // Verify claim ends with either '}' or ','
+        //    if (!(claim.EndsWith("}") || claim.EndsWith(",")))
+        //        throw new ArgumentException("Invalid claim");
+
+        //    // Parse the claim as JSON
+        //    Debug.Log("CLAIM: " + claim);
+        //    string jsonStr = "{" + claim.Substring(0, claim.Length - 1) + "}";
+        //    Debug.Log("JSON STR: " + jsonStr);
+        //    var json = JsonUtility.FromJson<Dictionary<string, object>>(jsonStr);
+
+        //    // Verify the claim contains exactly one key-value pair
+        //    if (json.Count != 1)
+        //        throw new ArgumentException("Invalid claim");
+
+        //    // Return the first (and only) key-value pair
+        //    foreach (var kvp in json)
+        //        return (kvp.Key, kvp.Value.ToString());
+
+        //    throw new ArgumentException("Invalid claim");
+        //}
+
         private static (string key, string value) VerifyExtendedClaim(string claim)
         {
-            // Verify claim ends with either '}' or ','
+            Debug.Log($"1. Input claim string: {claim}");
+
             if (!(claim.EndsWith("}") || claim.EndsWith(",")))
+            {
+                Debug.Log($"2. Claim doesn't end with }} or ,");
                 throw new ArgumentException("Invalid claim");
+            }
 
             // Parse the claim as JSON
             string jsonStr = "{" + claim.Substring(0, claim.Length - 1) + "}";
-            var json = JsonUtility.FromJson<Dictionary<string, object>>(jsonStr);
+            Debug.Log($"3. Final JSON string to parse: {jsonStr}");
 
-            // Verify the claim contains exactly one key-value pair
-            if (json.Count != 1)
-                throw new ArgumentException("Invalid claim");
+            try
+            {
+                var wrapper = JsonUtility.FromJson<ClaimWrapper>(jsonStr);
+                Debug.Log($"4. Parsed JSON wrapper: {wrapper?.key}");
 
-            // Return the first (and only) key-value pair
-            foreach (var kvp in json)
-                return (kvp.Key, kvp.Value.ToString());
+                if (string.IsNullOrEmpty(wrapper?.key))
+                    throw new ArgumentException("Claim must contain exactly one key-value pair");
 
-            throw new ArgumentException("Invalid claim");
+                // Split the key-value pair
+                var parts = wrapper.key.Split(new[] { ':' }, 2);
+                if (parts.Length != 2)
+                    throw new ArgumentException("Invalid claim format");
+
+                return (parts[0].Trim('"'), parts[1].Trim());
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"5. JSON parsing error: {ex.Message}");
+                throw new ArgumentException("Invalid JSON in claim", ex);
+            }
         }
 
         /// <summary>
@@ -188,15 +234,42 @@ namespace Sui.ZKLogin
         /// <param name="claimName">The expected name of the claim</param>
         /// <returns>The deserialized claim value</returns>
         /// <exception cref="ArgumentException">Thrown when the claim name doesn't match or the claim is invalid</exception>
-        public static T ExtractClaimValue<T>(Claim claim, string claimName)
+        //public static T ExtractClaimValue<T>(Claim claim, string claimName)
+        //{
+        //    string extendedClaim = DecodeBase64URL(claim.value, claim.indexMod4);
+        //    Debug.Log("EXTENDED CLAIM: " + extendedClaim);
+        //    var (name, value) = VerifyExtendedClaim(extendedClaim);
+
+        //    if (name != claimName)
+        //        throw new ArgumentException($"Invalid field name: found {name} expected {claimName}");
+
+        //    return JsonUtility.FromJson<T>(value);
+        //}
+
+        public static T ExtractClaimValue<T>(Claim claim, string claimName) where T : class
         {
+            if (claim == null)
+                throw new ArgumentNullException(nameof(claim));
+            if (string.IsNullOrEmpty(claimName))
+                throw new ArgumentException("Claim name cannot be null or empty", nameof(claimName));
+
             string extendedClaim = DecodeBase64URL(claim.value, claim.indexMod4);
             var (name, value) = VerifyExtendedClaim(extendedClaim);
 
             if (name != claimName)
                 throw new ArgumentException($"Invalid field name: found {name} expected {claimName}");
 
-            return JsonUtility.FromJson<T>(value);
+            T result = JsonUtility.FromJson<T>(value);
+            if (result == null)
+                throw new JwtDecodingException($"Failed to deserialize claim value to type {typeof(T).Name}");
+
+            return result;
         }
+    }
+
+    public class JwtDecodingException : Exception
+    {
+        public JwtDecodingException(string message) : base(message) { }
+        public JwtDecodingException(string message, Exception inner) : base(message, inner) { }
     }
 }
