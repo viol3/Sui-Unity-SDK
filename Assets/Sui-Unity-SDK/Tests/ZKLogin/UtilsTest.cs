@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Numerics;
 using NUnit.Framework;
 using Sui.ZKLogin.SDK;
@@ -21,19 +20,19 @@ namespace Sui.Tests.ZkLogin
         public void FindFirstNonZeroIndex_ShouldFindCorrectIndex()
         {
             // Test case 1: Leading zeros
-            Assert.AreEqual(2, ZKLogin.SDK.Utils.FindFirstNonZeroIndex(new byte[] { 0, 0, 1, 2 }));
+            Assert.AreEqual(2, Utils.FindFirstNonZeroIndex(new byte[] { 0, 0, 1, 2 }));
 
             // Test case 2: No leading zeros
-            Assert.AreEqual(0, ZKLogin.SDK.Utils.FindFirstNonZeroIndex(new byte[] { 1, 2, 3, 4 }));
+            Assert.AreEqual(0, Utils.FindFirstNonZeroIndex(new byte[] { 1, 2, 3, 4 }));
 
             // Test case 3: All zeros
-            Assert.AreEqual(-1, ZKLogin.SDK.Utils.FindFirstNonZeroIndex(new byte[] { 0, 0, 0, 0 }));
+            Assert.AreEqual(-1, Utils.FindFirstNonZeroIndex(new byte[] { 0, 0, 0, 0 }));
 
             // Test case 4: Single zero
-            Assert.AreEqual(-1, ZKLogin.SDK.Utils.FindFirstNonZeroIndex(new byte[] { 0 }));
+            Assert.AreEqual(-1, Utils.FindFirstNonZeroIndex(new byte[] { 0 }));
 
             // Test case 5: Single non-zero
-            Assert.AreEqual(0, ZKLogin.SDK.Utils.FindFirstNonZeroIndex(new byte[] { 1 }));
+            Assert.AreEqual(0, Utils.FindFirstNonZeroIndex(new byte[] { 1 }));
         }
 
         [Test]

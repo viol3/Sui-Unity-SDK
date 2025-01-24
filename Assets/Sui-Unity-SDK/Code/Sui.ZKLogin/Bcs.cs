@@ -1,4 +1,3 @@
-using System.Numerics;
 using Unity.Plastic.Newtonsoft.Json;
 using OpenDive.BCS;
 

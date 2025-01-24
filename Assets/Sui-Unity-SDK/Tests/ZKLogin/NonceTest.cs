@@ -1,7 +1,6 @@
 using System;
 using System.Numerics;
 using NUnit.Framework;
-using Org.BouncyCastle.Security;
 using Sui.Cryptography.Ed25519;
 using Sui.ZKLogin.SDK;
 using UnityEngine;
