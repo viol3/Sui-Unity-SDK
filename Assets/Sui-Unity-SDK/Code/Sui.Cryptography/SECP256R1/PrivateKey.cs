@@ -59,31 +59,32 @@ namespace Sui.Cryptography.Secp256r1
         {
             get
             {
-                // Similar lazy initialization pattern as ED25519
-                if (this._key_bytes == null && this._extended_key_params == null)
+                // If key bytes haven't been initialized yet, try to initialize from hex or base64
+                if (this._key_bytes == null)
                 {
                     if (this._key_hex != null)
                     {
                         string key = this._key_hex;
-                        if (_key_hex[0..2].Equals("0x")) key = this._key_hex[2..];
-
-                        // Convert hex string to private key bytes
+                        if (_key_hex[0..2].Equals("0x"))
+                            key = this._key_hex[2..];
                         this._key_bytes = key.HexStringToByteArray();
                     }
-                    else // _keyBase64 is not null
+                    else if (this._key_base64 != null)
                     {
                         string key = this._key_base64;
                         this._key_bytes = CryptoBytes.FromBase64String(key);
                     }
-
-                    // Create the extended key parameters using Bouncy Castle
-                    var d = new BigInteger(1, this._key_bytes);
-                    this._extended_key_params = new ECPrivateKeyParameters(d, domainParameters);
                 }
                 return this._key_bytes;
             }
             set
             {
+                if (value == null)
+                {
+                    this.SetError<SuiError>("Private key bytes cannot be null");
+                    return;
+                }
+
                 if (value.Length != this.KeyLength)
                 {
                     this.SetError<SuiError>($"Invalid key length: {value.Length}");
@@ -91,14 +92,17 @@ namespace Sui.Cryptography.Secp256r1
                 }
 
                 this._key_bytes = value;
-                // Create extended parameters from the raw bytes
-                var d = new BigInteger(1, value);
-                this._extended_key_params = new ECPrivateKeyParameters(d, domainParameters);
             }
         }
 
         public PrivateKey(byte[] private_key) : base(private_key)
         {
+            if (private_key == null || private_key.Length != this.KeyLength)
+            {
+                this.SetError<SuiError>($"Invalid private key");
+                return;
+            }
+
             // Initialize curve parameters in constructor
             curveParameters = ECNamedCurveTable.GetByName("secp256r1");
             domainParameters = new ECDomainParameters(
@@ -109,7 +113,8 @@ namespace Sui.Cryptography.Secp256r1
                 curveParameters.GetSeed()
             );
 
-            this.SetExtendedParameters();
+            //this.SetExtendedParameters();
+            InitializeExtendedParameters();
         }
 
         public PrivateKey(ReadOnlySpan<byte> private_key) : base(private_key)
@@ -124,7 +129,8 @@ namespace Sui.Cryptography.Secp256r1
                 curveParameters.GetSeed()
             );
 
-            this.SetExtendedParameters();
+            //this.SetExtendedParameters();
+            InitializeExtendedParameters();
         }
 
         public PrivateKey(string private_key) : base(private_key)
@@ -139,7 +145,8 @@ namespace Sui.Cryptography.Secp256r1
                 curveParameters.GetSeed()
             );
 
-            this.SetExtendedParameters();
+            //this.SetExtendedParameters();
+            // Extended parameters will be initialized when KeyBytes property is accessed
         }
 
         public PrivateKey() : base(PrivateKey.GetRandomSeed())
@@ -154,21 +161,87 @@ namespace Sui.Cryptography.Secp256r1
                 curveParameters.GetSeed()
             );
 
-            this.SetExtendedParameters();
+            //this.SetExtendedParameters();
+            InitializeExtendedParameters();
         }
 
         /// <summary>
-        /// Generates the corresponding SECP256R1 public key.
+        /// Generates the corresponding SECP256R1 public key
         /// </summary>
         public override PublicKeyBase PublicKey()
         {
-            // Use the private key parameters to generate the public key point
-            var q = domainParameters.G.Multiply(this._extended_key_params.D);
-            var publicKeyParams = new ECPublicKeyParameters(q, domainParameters);
+            // Check if we have an error state
+            if (this.Error != null)
+            {
+                throw new InvalidOperationException($"Cannot generate public key: {this.Error.Message}");
+            }
 
-            // Convert the public key parameters to compressed format bytes
-            byte[] publicKeyBytes = publicKeyParams.Q.GetEncoded(true);
-            return new PublicKey(publicKeyBytes);
+            // Check if we have valid key bytes
+            if (this._key_bytes == null)
+            {
+                throw new InvalidOperationException("Private key has not been properly initialized - key bytes are null");
+            }
+
+            // If extended parameters are null, try to initialize them
+            if (this._extended_key_params == null)
+            {
+                InitializeExtendedParameters();
+
+                // Check if initialization failed
+                if (this.Error != null)
+                {
+                    throw new InvalidOperationException($"Failed to initialize private key parameters: {this.Error.Message}");
+                }
+
+                if (this._extended_key_params == null)
+                {
+                    throw new InvalidOperationException("Failed to initialize private key parameters - parameters are null");
+                }
+            }
+
+            try
+            {
+                var q = domainParameters.G.Multiply(this._extended_key_params.D);
+                var publicKeyParams = new ECPublicKeyParameters(q, domainParameters);
+                return new PublicKey(publicKeyParams.Q.GetEncoded(true));
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to generate public key", ex);
+            }
+        }
+
+        /// <summary>
+        /// Helper method to safely initialize the extended key parameters
+        /// </summary>
+        private void InitializeExtendedParameters()
+        {
+            try
+            {
+                // Ensure we have valid key bytes
+                if (this._key_bytes == null)
+                {
+                    this.SetError<SuiError>("Key bytes are null");
+                    return;
+                }
+
+                // Create positive BigInteger from private key bytes
+                var d = new BigInteger(1, this._key_bytes);
+
+                // Validate the private key value is in the correct range
+                if (d.CompareTo(BigInteger.Zero) <= 0 || d.CompareTo(domainParameters.N) >= 0)
+                {
+                    this.SetError<SuiError>("Private key value must be in the range [1, n-1]");
+                    return;
+                }
+
+                // Create the private key parameters
+                this._extended_key_params = new ECPrivateKeyParameters(d, domainParameters);
+            }
+            catch (Exception ex)
+            {
+                this.SetError<SuiError>($"Failed to initialize private key parameters: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -196,18 +269,6 @@ namespace Sui.Cryptography.Secp256r1
             byte[] seed = new byte[32]; // SECP256R1 uses 32-byte private keys
             secureRandom.NextBytes(seed);
             return seed;
-        }
-
-        /// <summary>
-        /// Sets up the extended key parameters using the raw key bytes.
-        /// </summary>
-        private void SetExtendedParameters()
-        {
-            if (this.Error != null)
-                return;
-
-            var d = new BigInteger(1, this.KeyBytes);
-            this._extended_key_params = new ECPrivateKeyParameters(d, domainParameters);
         }
     }
 }
