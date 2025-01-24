@@ -23,8 +23,8 @@
 //  THE SOFTWARE.
 //
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
+using Unity.Plastic.Newtonsoft.Json;
+using Unity.Plastic.Newtonsoft.Json.Serialization;
 using Sui.Rpc.Client;
 using Sui.Utilities;
 

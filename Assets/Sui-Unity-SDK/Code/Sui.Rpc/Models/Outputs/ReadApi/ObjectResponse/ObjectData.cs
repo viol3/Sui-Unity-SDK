@@ -24,7 +24,7 @@
 //
 
 using System.Numerics;
-using Newtonsoft.Json;
+using Unity.Plastic.Newtonsoft.Json;
 using Sui.Accounts;
 using Sui.Types;
 

@@ -59,6 +59,31 @@ We envision a tool that not only provides the flexibility and customization for 
 - [x] Local Transaction Building.
 - [x] Local, custom, dev, test, and main net compatibility.
 - [x] Comprehensive Unit and Integration Test coverage.
+- [x] [ZK Login](https://docs.sui.io/concepts/cryptography/zklogin)
+
+### Running End-to-End Test
+The SDK contains a test suite that leverages a local instance of the the Sui client. Prior to running the tests please install the Sui client and run the following command:
+
+```
+RUST_LOG="off,sui_node=info" sui start --with-faucet --force-regenesis --with-indexer
+```
+
+### On ZK Login
+
+>  zkLogin is a two-factor authentication scheme; sending a transaction requires both a credential from a recent OAuth login and a salt not managed by the OAuth provider. An attacker who compromises an OAuth account cannot transact from the user's corresponding Sui address unless they separately compromise the salt.
+
+> zkLogin is one of several native Sui signature schemes thanks to Sui's cryptography agility. It integrates with other Sui primitives, like sponsored transactions and multisig.
+
+#### How ZK Login Works
+How zkLogin works
+
+In rough sketches, the zkLogin protocol relies on the following:
+
+1. A JWT is a signed payload from OAuth providers, including a user-defined field named nonce. zkLogin leverages the OpenID Connect OAuth flow by defining the nonce as a public key and an expiry epoch.
+2. The wallet stores an ephemeral KeyPair, where the ephemeral public key is defined in the nonce. The ephemeral private key signs transactions for a brief session, eliminating the need for user memorization. The Groth16 zero-knowledge proof is generated based on the JWT, concealing privacy-sensitive fields.
+3. A transaction is submitted on-chain with the ephemeral signature and the ZK proof. Sui authorities execute the transaction after verifying the ephemeral signature and the proof.
+4. Instead of deriving the Sui address based on a public key, the zkLogin address is derived from sub (that uniquely identifies the user per provider), iss (identifies the provider), aud (identifies the application) and user_salt (a value that unlinks the OAuth identifier with the on-chain address).
+
 
 ### Make Account Transfer Quickly and Easily! ###
 

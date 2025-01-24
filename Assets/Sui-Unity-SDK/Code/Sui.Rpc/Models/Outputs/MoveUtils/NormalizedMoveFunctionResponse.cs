@@ -24,7 +24,7 @@
 //
 
 using System.Linq;
-using Newtonsoft.Json;
+using Unity.Plastic.Newtonsoft.Json;
 using Sui.Transactions;
 using Sui.Utilities;
 

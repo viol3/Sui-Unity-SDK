@@ -26,7 +26,6 @@
 using System;
 using Chaos.NaCl;
 using NBitcoin;
-using Sui.Rpc.Client;
 using Sui.Utilities;
 using static Sui.Cryptography.SignatureUtils;
 

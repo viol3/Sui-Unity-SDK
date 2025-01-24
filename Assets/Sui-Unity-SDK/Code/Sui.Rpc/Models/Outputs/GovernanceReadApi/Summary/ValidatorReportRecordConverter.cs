@@ -23,8 +23,8 @@
 //  THE SOFTWARE.
 //
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using Unity.Plastic.Newtonsoft.Json;
+using Unity.Plastic.Newtonsoft.Json.Linq;
 using Sui.Accounts;
 using Sui.Utilities;
 using System;
