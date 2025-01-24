@@ -26,7 +26,10 @@
 using static Sui.Cryptography.SignatureUtils;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Asn1.X9;
-using Org.BouncyCastle.Security;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Signers;
+using System;
+using Org.BouncyCastle.Math;
 
 namespace Sui.Cryptography.Secp256r1
 {
@@ -107,25 +110,29 @@ namespace Sui.Cryptography.Secp256r1
         /// <returns>True if the signature is valid, false otherwise</returns>
         public override bool Verify(byte[] message, byte[] signature)
         {
-            try
-            {
-                // Create an ECDSA signer with SHA-256
-                var signer = SignerUtilities.GetSigner("SHA-256withECDSA");
+            if (signature.Length != 64)
+                throw new ArgumentException("Signature must be 64 bytes (compact format)");
 
-                // Initialize for verification with our public key
-                signer.Init(false, _key_params);
+            // Hash the message first
+            var digest = new Sha256Digest();
+            var hash = new byte[digest.GetDigestSize()];
+            digest.BlockUpdate(message, 0, message.Length);
+            digest.DoFinal(hash, 0);
 
-                // Input the message
-                signer.BlockUpdate(message, 0, message.Length);
+            // Split signature into r and s
+            byte[] rBytes = new byte[32];
+            byte[] sBytes = new byte[32];
+            Array.Copy(signature, 0, rBytes, 0, 32);
+            Array.Copy(signature, 32, sBytes, 0, 32);
 
-                // Verify the signature
-                return signer.VerifySignature(signature);
-            }
-            catch
-            {
-                // Any error in verification process means the signature is invalid
-                return false;
-            }
+            var r = new BigInteger(1, rBytes);
+            var s = new BigInteger(1, sBytes);
+
+            // Use ECDSASigner directly
+            var verifier = new ECDsaSigner();
+            verifier.Init(false, this._key_params);
+
+            return verifier.VerifySignature(hash, r, s);
         }
     }
 }

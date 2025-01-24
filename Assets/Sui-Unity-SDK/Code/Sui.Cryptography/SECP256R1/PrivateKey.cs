@@ -32,6 +32,8 @@ using Org.BouncyCastle.Math;
 
 using Sui.Utilities;
 using static Sui.Cryptography.SignatureUtils;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Signers;
 
 namespace Sui.Cryptography.Secp256r1
 {
@@ -249,12 +251,36 @@ namespace Sui.Cryptography.Secp256r1
         /// </summary>
         public override SignatureBase Sign(byte[] message)
         {
-            var signer = SignerUtilities.GetSigner("SHA-256withECDSA");
-            signer.Init(true, this._extended_key_params);
-            signer.BlockUpdate(message, 0, message.Length);
+            // Create SHA256 hash of message first
+            var digest = new Sha256Digest();
+            var hash = new byte[digest.GetDigestSize()];
+            digest.BlockUpdate(message, 0, message.Length);
+            digest.DoFinal(hash, 0);
 
-            byte[] signature = signer.GenerateSignature();
-            return new Signature(signature);
+            // Use ECDSASigner directly for more control
+            var signer = new ECDsaSigner(new HMacDsaKCalculator(new Sha256Digest()));
+            signer.Init(true, this._extended_key_params);
+
+            // Generate signature
+            var signature = signer.GenerateSignature(hash);
+            BigInteger r = signature[0];
+            BigInteger s = signature[1];
+
+            // Enforce low S value like TypeScript implementation
+            BigInteger halfN = domainParameters.N.ShiftRight(1);
+            if (s.CompareTo(halfN) > 0)
+                s = domainParameters.N.Subtract(s);
+
+            // Convert to compact format (r || s)
+            byte[] rBytes = r.ToByteArrayUnsigned();
+            byte[] sBytes = s.ToByteArrayUnsigned();
+
+            // Ensure both r and s are 32 bytes
+            byte[] compactSignature = new byte[64];
+            Array.Copy(rBytes.PadLeft(32), 0, compactSignature, 0, 32);
+            Array.Copy(sBytes.PadLeft(32), 0, compactSignature, 32, 32);
+
+            return new Signature(compactSignature);
         }
 
         public override SignatureBase Sign(string b64_message)
