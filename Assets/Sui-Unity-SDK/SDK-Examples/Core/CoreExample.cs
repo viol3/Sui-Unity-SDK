@@ -66,7 +66,7 @@ public class CoreExample : MonoBehaviour
     public void GenEd25519Account()
     {
         // You can create an ED25519 Account by explicitly defining the signature scheme
-        Account accountEd25519Explicit = new Account(SignatureScheme.ED25519);
+        Account accountEd25519Explicit = new Account(SignatureScheme.Ed25519);
         privateKeyExplicit = accountEd25519Explicit.PrivateKey.KeyHex;
         privateKeyExplicitBytes = string.Join(",", accountEd25519Explicit.PrivateKey.KeyBytes);
         suiAddressFromPrivateKeyExplicit = accountEd25519Explicit.SuiAddress().ToString();

@@ -88,7 +88,7 @@ namespace Sui.Cryptography
 
             switch (signature_scheme)
             {
-                case SignatureScheme.ED25519:
+                case SignatureScheme.Ed25519:
                     return new Ed25519.PublicKey(key_value);
                 default:
                     return this.SetError<SuiPublicKeyBase, SuiError>(null, "Signature scheme is not implemented.", key_value);

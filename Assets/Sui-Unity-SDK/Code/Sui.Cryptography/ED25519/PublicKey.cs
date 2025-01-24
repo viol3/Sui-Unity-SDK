@@ -32,7 +32,7 @@ namespace Sui.Cryptography.Ed25519
     /// </summary>
     public class PublicKey : SuiPublicKeyBase
     {
-        public override SignatureScheme SignatureScheme { get => SignatureScheme.ED25519; }
+        public override SignatureScheme SignatureScheme { get => SignatureScheme.Ed25519; }
 
         public override int KeyLength { get => SignatureSchemeToSize.ED25519; }
 
