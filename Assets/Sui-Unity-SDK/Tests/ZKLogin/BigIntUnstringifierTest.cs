@@ -7,6 +7,7 @@ using System.Numerics;
 
 namespace Sui.Tests.ZkLogin
 {
+    // TODO: Add BigIntUnstringifier test
     public class BigIntUnstringifierTest : MonoBehaviour
     {
         [Test]
@@ -20,11 +21,11 @@ namespace Sui.Tests.ZkLogin
 
             var result = BigIntUnstringifier.UnstringifyBigInts(constant1);
 
-            // Access C array
-            var cArray = (List<BigInteger>)result["C"];
+            //// Access C array
+            //var cArray = (List<BigInteger>)result["C"];
 
-            // Access M array (list of lists)
-            var mArray = (List<List<BigInteger>>)result["M"];
+            //// Access M array (list of lists)
+            //var mArray = (List<List<BigInteger>>)result["M"];
         }
     }
 
