@@ -210,15 +210,20 @@ namespace Sui.Tests.ZkLogin
         }
 
         [Test]
-        public void ChunkArrayTest_OddSplit()
+        public void ChunkArray_WithOddSplit_ReturnsCorrectChunks()
         {
-            int[] array = { 1, 2, 3, 4, 5 };
-            var chunks = Utils.ChunkArray(array, 2);
+            // Arrange
+            int[] input = { 1, 2, 3, 4, 5 };  // 5 elements
+            int chunkSize = 2;  // Chunks of 2 will leave one element in last chunk
 
-            Assert.AreEqual(3, chunks.Count);
-            Assert.AreEqual(new List<int> { 1, 2 }, chunks[0]);
-            Assert.AreEqual(new List<int> { 3, 4 }, chunks[1]);
-            Assert.AreEqual(new List<int> { 5 }, chunks[2]);
+            // Act
+            var result = Utils.ChunkArray(input, chunkSize);
+
+            // Assert
+            Assert.That(result.Count, Is.EqualTo(3));
+            CollectionAssert.AreEqual(new List<int> { 1 }, result[0]);
+            CollectionAssert.AreEqual(new List<int> { 2, 3 }, result[1]);
+            CollectionAssert.AreEqual(new List<int> { 4, 5 }, result[2]);
         }
 
         [Test]
@@ -240,14 +245,27 @@ namespace Sui.Tests.ZkLogin
             Assert.AreEqual(new List<int> { 1, 2, 3 }, chunks[0]);
         }
 
-        [Test]
-        public void ChunkArrayTest_InvalidChunkSize()
-        {
-            int[] array = { 1, 2, 3 };
+        //[Test]
+        //public void ChunkArrayTest_InvalidChunkSize()
+        //{
+        //    int[] array = { 1, 2, 3 };
 
-            Assert.Throws<ArgumentException>(() => Utils.ChunkArray(array, 0));
-            Assert.Throws<ArgumentException>(() => Utils.ChunkArray(array, -1));
+        //    Assert.Throws<ArgumentException>(() => Utils.ChunkArray(array, 0));
+        //    Assert.Throws<ArgumentException>(() => Utils.ChunkArray(array, -1));
+        //}
+
+        [TestCase(0)]
+        [TestCase(-1)]
+        public void ChunkArray_WithInvalidChunkSize_ThrowsArgumentException(int invalidChunkSize)
+        {
+            // Arrange
+            int[] input = { 1, 2, 3 };
+
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => Utils.ChunkArray(input, invalidChunkSize));
+            Assert.That(ex.Message, Does.StartWith("Chunk size must be greater than zero"));
         }
+
 
         [Test]
         public void ChunkArrayTest_SingleElementArray()

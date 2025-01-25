@@ -112,9 +112,18 @@ namespace Sui.ZKLogin.SDK
         /// <returns>A list of chunks, where each chunk is a list of elements.</returns>
         public static List<List<T>> ChunkArray<T>(T[] array, int chunkSize)
         {
+            if (array == null)
+                throw new ArgumentNullException(nameof(array));
+
+            if (chunkSize <= 0)
+                throw new ArgumentException("Chunk size must be greater than zero.", nameof(chunkSize));
+
+            if (array.Length == 0)
+                return new List<List<T>>();
+
             var reversed = array.Reverse().ToArray();
             var chunks = new List<List<T>>();
-            int totalChunks = (array.Length + chunkSize - 1) / chunkSize;
+            int totalChunks = (array.Length + chunkSize - 1) / chunkSize;  // Now safe because we checked chunkSize > 0
 
             for (int i = 0; i < totalChunks; i++)
             {
