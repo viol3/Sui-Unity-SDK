@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Sui.Cryptography;
 using Sui.Cryptography.Secp256k1;
+using Org.BouncyCastle.Crypto.Digests;
+using UnityEngine;
+using Sui.Accounts;
 
 namespace Sui.Tests.Cryptography
 {
@@ -78,6 +81,59 @@ namespace Sui.Tests.Cryptography
         //}
 
         [Test]
+        public void ToSuiAddress_FromBase64PublicKey_Debug()
+        {
+            // Test with first test case
+            var testCase = TEST_CASES[0];
+
+            Debug.Log($"Input RawPublicKey: {testCase.RawPublicKey}");
+            Debug.Log($"Expected SuiAddress: {testCase.SuiAddress}");
+
+            var key = new PublicKey(testCase.RawPublicKey);
+            Assert.That(key, Is.Not.Null, "PublicKey should not be null");
+            Assert.That(key.KeyBytes, Is.Not.Null, "KeyBytes should not be null");
+
+            Debug.Log($"KeyBytes length: {key.KeyBytes.Length}");
+            Debug.Log($"KeyBytes hex: {BitConverter.ToString(key.KeyBytes)}");
+
+            var suiBytes = key.ToSuiBytes();
+            Debug.Log($"SuiBytes length: {suiBytes.Length}");
+            Debug.Log($"SuiBytes hex: {BitConverter.ToString(suiBytes)}");
+
+            // Create Blake2b hash manually to verify
+            var blake2b = new Blake2bDigest(256);
+            var hashedAddress = new byte[32]; // Use 32 bytes for 256-bit hash
+            blake2b.BlockUpdate(suiBytes, 0, suiBytes.Length);
+            blake2b.DoFinal(hashedAddress, 0);
+
+            Debug.Log($"Hashed address hex: {BitConverter.ToString(hashedAddress).Replace("-", "").ToLowerInvariant()}");
+
+            //var suiAddress = key.ToSuiAddress();
+            //Debug.Log($"Final SuiAddress: {suiAddress}");
+
+            //Assert.That(suiAddress, Is.Not.Null, "SuiAddress should not be null");
+            //Assert.That(suiAddress.ToString(), Is.EqualTo(testCase.SuiAddress));
+
+            var hashHex = BitConverter.ToString(hashedAddress).Replace("-", "").ToLowerInvariant();
+            Debug.Log($"Hashed address hex: {hashHex}");
+
+            // Try creating hex string with 0x prefix
+            var addressHex = "0x" + hashHex;
+            Debug.Log($"Address hex with prefix: {addressHex}");
+
+            try
+            {
+                var suiAddress = AccountAddress.FromHex(addressHex);
+                Debug.Log($"Successfully created AccountAddress: {suiAddress}");
+            }
+            catch (Exception ex)
+            {
+                Debug.Log($"Failed to create AccountAddress. Exception: {ex.GetType().Name}: {ex.Message}");
+                Debug.Log($"Stack trace: {ex.StackTrace}");
+            }
+        }
+
+        [Test]
         public void ToBase64_ReturnsCorrectString()
         {
             var pubKeyBase64 = Convert.ToBase64String(VALID_SECP256K1_PUBLIC_KEY);
@@ -101,7 +157,7 @@ namespace Sui.Tests.Cryptography
         public void ToSuiAddress_FromBase64PublicKey_ReturnsCorrectAddress(TestCase testCase)
         {
             var key = new PublicKey(testCase.RawPublicKey);
-            Assert.That(key.ToSuiAddress(), Is.EqualTo(testCase.SuiAddress));
+            Assert.That(key.ToSuiAddress().ToString(), Is.EqualTo(testCase.SuiAddress));
         }
 
         [TestCaseSource(nameof(TEST_CASES))]

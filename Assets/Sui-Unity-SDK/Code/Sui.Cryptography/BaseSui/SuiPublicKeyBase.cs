@@ -29,6 +29,7 @@ using Chaos.NaCl;
 using Org.BouncyCastle.Crypto.Digests;
 using Sui.Accounts;
 using Sui.Utilities;
+using UnityEngine;
 using static Sui.Cryptography.SignatureUtils;
 
 namespace Sui.Cryptography
@@ -202,16 +203,18 @@ namespace Sui.Cryptography
         {
             // Set up address byte arrays.
             byte[] prehash_address = this.ToSuiBytes();
-            byte[] hashed_address = new byte[this.KeyLength];
+            const int BLAKE2B_256_LENGTH = 32;
+            byte[] hashed_address = new byte[BLAKE2B_256_LENGTH];
 
             // Hash the prehash array.
             Blake2bDigest blake2b = new Blake2bDigest(256);
             blake2b.BlockUpdate(prehash_address, 0, prehash_address.Length);
             blake2b.DoFinal(hashed_address, 0);
 
-            // Convert to hex and normalize address.
-            string address_hex = CryptoBytes.ToHexStringLower(hashed_address);
-            return AccountAddress.FromHex(address_hex);
+            // Convert to hex with 0x prefix and normalize address.
+            //string addressHex = "0x" + BitConverter.ToString(hashed_address).Replace("-", "").ToLowerInvariant();
+            string addressHex = CryptoBytes.ToHexStringLower(hashed_address);
+            return AccountAddress.FromHex(addressHex);
         }
 
         /// <summary>
@@ -231,4 +234,3 @@ namespace Sui.Cryptography
                );
     }
 }
-
