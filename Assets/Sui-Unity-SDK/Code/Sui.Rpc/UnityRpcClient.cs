@@ -116,11 +116,6 @@ namespace Sui.Rpc
                     Converters = new List<JsonConverter> { new BigIntegerConverter() }
                 };
 
-                //return JsonConvert.DeserializeObject<RpcResult<T>>
-                //(
-                //    request.downloadHandler.text
-                //);
-
                 return JsonConvert.DeserializeObject<RpcResult<T>>(
                     request.downloadHandler.text,
                     serializerSettings

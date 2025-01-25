@@ -116,13 +116,6 @@ namespace Sui.Tests
             Task<RpcResult<IEnumerable<DelegatedStake>>> stake_fetch_task = this.Toolbox.Client.GetStakesAsync(this.Toolbox.Account);
             yield return new WaitUntil(() => stake_fetch_task.IsCompleted);
 
-            //Task<RpcResult<IEnumerable<DelegatedStake>>> stakes_by_id_task = this.Toolbox.Client.GetStakesByIdsAsync
-            //(
-            //    new List<AccountAddress>()
-            //    {
-            //        stake_fetch_task.Result.Result.ToList()[0].Stakes[0].Stake.StakedSuiID
-            //    }
-            //);
             var stakeFetchResult = stake_fetch_task.Result.Result.ToList();
             if (stakeFetchResult.Count > 0 && stakeFetchResult[0].Stakes.Length > 0)
             {

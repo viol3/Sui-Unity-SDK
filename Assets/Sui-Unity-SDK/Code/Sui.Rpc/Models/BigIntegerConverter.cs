@@ -36,27 +36,6 @@ namespace Sui.Rpc
             return objectType == typeof(BigInteger) || objectType == typeof(BigInteger?);
         }
 
-        //public override object ReadJson(JsonReader reader, Type objectType, object existingValue, bool hasExistingValue, JsonSerializer serializer)
-        //{
-        //    //switch (reader.TokenType)
-        //    //{
-        //    //    case JsonToken.Integer:
-        //    //        return new BigInteger((long)reader.Value);
-        //    //    case JsonToken.String:
-        //    //        return string.IsNullOrEmpty((string)reader.Value)
-        //    //            ? BigInteger.Zero
-        //    //            : BigInteger.Parse((string)reader.Value);
-        //    //    default:
-        //    //        return BigInteger.Zero;
-        //    //}
-        //    if (reader.TokenType == JsonToken.Null)
-        //        return null;
-
-        //    return reader.TokenType == JsonToken.Integer ?
-        //        new BigInteger((long)reader.Value) :
-        //        BigInteger.Parse(reader.Value.ToString());
-        //}
-
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             if (reader.TokenType == JsonToken.Null)
