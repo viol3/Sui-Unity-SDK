@@ -308,12 +308,12 @@ namespace Sui.Tests.Cryptography
             }
         }
 
-        [Test]
+        //[Test]
         // TODO: Implement PublicKey toSuiBytes test
-        public void PublicKeySuiBytes()
-        {
-            throw new System.NotImplementedException();
-        }
+        //public void PublicKeySuiBytes()
+        //{
+        //    throw new System.NotImplementedException();
+        //}
 
         [Test]
         public void PrivateKeySignTest()

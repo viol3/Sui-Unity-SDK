@@ -111,9 +111,14 @@ namespace Sui.Rpc
                 while (!request.isDone)
                     await Task.Yield();
 
-                return JsonConvert.DeserializeObject<RpcResult<T>>
-                (
-                    request.downloadHandler.text
+                var serializerSettings = new JsonSerializerSettings
+                {
+                    Converters = new List<JsonConverter> { new BigIntegerConverter() }
+                };
+
+                return JsonConvert.DeserializeObject<RpcResult<T>>(
+                    request.downloadHandler.text,
+                    serializerSettings
                 );
             }
         }

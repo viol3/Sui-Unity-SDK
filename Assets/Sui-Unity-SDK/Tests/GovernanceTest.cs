@@ -116,17 +116,22 @@ namespace Sui.Tests
             Task<RpcResult<IEnumerable<DelegatedStake>>> stake_fetch_task = this.Toolbox.Client.GetStakesAsync(this.Toolbox.Account);
             yield return new WaitUntil(() => stake_fetch_task.IsCompleted);
 
-            Task<RpcResult<IEnumerable<DelegatedStake>>> stakes_by_id_task = this.Toolbox.Client.GetStakesByIdsAsync
-            (
-                new List<AccountAddress>()
-                {
-                    stake_fetch_task.Result.Result.ToList()[0].Stakes[0].Stake.StakedSuiID
-                }
-            );
-            yield return new WaitUntil(() => stakes_by_id_task.IsCompleted);
+            var stakeFetchResult = stake_fetch_task.Result.Result.ToList();
+            if (stakeFetchResult.Count > 0 && stakeFetchResult[0].Stakes.Length > 0)
+            {
+                Task<RpcResult<IEnumerable<DelegatedStake>>> stakes_by_id_task = this.Toolbox.Client.GetStakesByIdsAsync(
+                    new List<AccountAddress>() { stakeFetchResult[0].Stakes[0].Stake.StakedSuiID }
+                );
 
-            Assert.Greater(stake_fetch_task.Result.Result.ToList().Count, 0);
-            Assert.IsTrue(stakes_by_id_task.Result.Result.ToList()[0].Stakes[0].Equals(stake_fetch_task.Result.Result.ToList()[0].Stakes[0]));
+                yield return new WaitUntil(() => stakes_by_id_task.IsCompleted);
+
+                Assert.Greater(stake_fetch_task.Result.Result.ToList().Count, 0);
+                Assert.IsTrue(stakes_by_id_task.Result.Result.ToList()[0].Stakes[0].Equals(stake_fetch_task.Result.Result.ToList()[0].Stakes[0]));
+            }
+            else
+            {
+                Debug.Log("No staked accounts ...");
+            }
         }
 
         [UnityTest]

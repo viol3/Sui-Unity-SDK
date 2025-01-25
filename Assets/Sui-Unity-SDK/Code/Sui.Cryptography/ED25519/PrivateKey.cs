@@ -40,7 +40,7 @@ namespace Sui.Cryptography.Ed25519
         /// <summary>
         /// ED25519 signature scheme identifier.
         /// </summary>
-        public override SignatureScheme SignatureScheme => SignatureScheme.ED25519;
+        public override SignatureScheme SignatureScheme => SignatureScheme.Ed25519;
 
         /// <summary>
         /// Byte array representations of a ED25519 private key

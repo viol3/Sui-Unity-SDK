@@ -43,7 +43,7 @@ namespace Sui.Cryptography
         /// </summary>
         public enum SignatureScheme
         {
-            ED25519,
+            Ed25519,
             Secp256k1,
             Secp256r1,
             MultiSig,
@@ -204,7 +204,7 @@ namespace Sui.Cryptography
         private static readonly Dictionary<SignatureScheme, byte> _signature_scheme_to_flag = new
             Dictionary<SignatureScheme, byte>
         {
-            { SignatureScheme.ED25519,      0x00 },
+            { SignatureScheme.Ed25519,      0x00 },
             { SignatureScheme.Secp256k1,    0x01 },
             { SignatureScheme.Secp256r1,    0x02 },
             { SignatureScheme.MultiSig,     0x03 },
@@ -215,7 +215,7 @@ namespace Sui.Cryptography
         /// Represents the flag for the Ed25519 signature scheme.
         /// </summary>
         public static byte ED25519
-            => SignatureSchemeToFlag._signature_scheme_to_flag[SignatureScheme.ED25519];
+            => SignatureSchemeToFlag._signature_scheme_to_flag[SignatureScheme.Ed25519];
 
         /// <summary>
         /// Represents the flag for the SECP256K1 signature scheme.
@@ -260,7 +260,7 @@ namespace Sui.Cryptography
         private static readonly Dictionary<SignatureScheme, int> _signature_scheme_to_size =
             new Dictionary<SignatureScheme, int>
         {
-            { SignatureScheme.ED25519,      32 },
+            { SignatureScheme.Ed25519,      32 },
             { SignatureScheme.Secp256k1,    33 },
             { SignatureScheme.Secp256r1,    33 },
             { SignatureScheme.MultiSig,     32 },
@@ -271,7 +271,7 @@ namespace Sui.Cryptography
         /// Represents the size of the ED25519 signature in bytes.
         /// </summary>
         public static int ED25519
-            => SignatureSchemeToSize._signature_scheme_to_size[SignatureScheme.ED25519];
+            => SignatureSchemeToSize._signature_scheme_to_size[SignatureScheme.Ed25519];
 
         /// <summary>
         /// Represents the size of the SECP256K1 signature in bytes.
@@ -317,7 +317,7 @@ namespace Sui.Cryptography
         public static readonly Dictionary<byte, SignatureScheme> _signature_flag_to_scheme =
             new Dictionary<byte, SignatureScheme>
         {
-            { 0x00, SignatureScheme.ED25519 },
+            { 0x00, SignatureScheme.Ed25519 },
             { 0x01, SignatureScheme.Secp256k1 },
             { 0x02, SignatureScheme.Secp256r1 },
             { 0x03, SignatureScheme.MultiSig },

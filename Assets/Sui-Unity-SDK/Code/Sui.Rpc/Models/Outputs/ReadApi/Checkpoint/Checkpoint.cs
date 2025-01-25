@@ -60,6 +60,7 @@ namespace Sui.Rpc.Models
         /// The epoch this checkpoint is part of.
         /// </summary>
         [JsonProperty("epoch")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger Epoch { get; internal set; }
 
         /// <summary>
@@ -74,6 +75,7 @@ namespace Sui.Rpc.Models
         /// checkpoint.
         /// </summary>
         [JsonProperty("networkTotalTransactions")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger NetworkTotalTransactions { get; internal set; }
 
         /// <summary>
@@ -87,6 +89,7 @@ namespace Sui.Rpc.Models
         /// consensus.
         /// </summary>
         [JsonProperty("sequenceNumber")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger SequenceNumber { get; internal set; }
 
         /// <summary>
@@ -95,6 +98,7 @@ namespace Sui.Rpc.Models
         /// checkpoints can have same timestamp if they originate from the same underlining consensus commit
         /// </summary>
         [JsonProperty("timestampMs")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger TimestampMs { get; internal set; }
 
         /// <summary>

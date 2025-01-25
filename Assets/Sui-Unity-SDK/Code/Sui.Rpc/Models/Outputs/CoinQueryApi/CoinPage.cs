@@ -28,12 +28,14 @@ namespace Sui.Rpc.Models
         public AccountAddress CoinObjectID { get; internal set; }
 
         [JsonProperty("version")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger Version { get; internal set; }
 
         [JsonProperty("digest")]
         public string Digest { get; internal set; }
 
         [JsonProperty("balance")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger Balance { get; internal set; }
 
         [JsonProperty("previousTransaction")]

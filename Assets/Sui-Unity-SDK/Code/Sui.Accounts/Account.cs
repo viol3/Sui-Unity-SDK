@@ -41,7 +41,7 @@ namespace Sui.Accounts
         {
             switch (signature_scheme)
             {
-                case SignatureScheme.ED25519:
+                case SignatureScheme.Ed25519:
                     this.PrivateKey = new Cryptography.Ed25519.PrivateKey(private_key);
                     this.PublicKey = new Cryptography.Ed25519.PublicKey(public_key);
                     break;
@@ -57,7 +57,7 @@ namespace Sui.Accounts
         {
             switch (signature_scheme)
             {
-                case SignatureScheme.ED25519:
+                case SignatureScheme.Ed25519:
                     this.PrivateKey = new Cryptography.Ed25519.PrivateKey(private_key);
                     this.PublicKey = new Cryptography.Ed25519.PublicKey(public_key);
                     break;
@@ -69,11 +69,11 @@ namespace Sui.Accounts
             this.SignatureScheme = signature_scheme;
         }
 
-        public Account(byte[] private_key, SignatureScheme signature_scheme = SignatureScheme.ED25519)
+        public Account(byte[] private_key, SignatureScheme signature_scheme = SignatureScheme.Ed25519)
         {
             switch (signature_scheme)
             {
-                case SignatureScheme.ED25519:
+                case SignatureScheme.Ed25519:
                     this.PrivateKey = new Cryptography.Ed25519.PrivateKey(private_key);
                     this.PublicKey = (SuiPublicKeyBase)this.PrivateKey.PublicKey();
                     break;
@@ -85,11 +85,11 @@ namespace Sui.Accounts
             this.SignatureScheme = signature_scheme;
         }
 
-        public Account(string private_key, SignatureScheme signature_scheme = SignatureScheme.ED25519)
+        public Account(string private_key, SignatureScheme signature_scheme = SignatureScheme.Ed25519)
         {
             switch (signature_scheme)
             {
-                case SignatureScheme.ED25519:
+                case SignatureScheme.Ed25519:
                     this.PrivateKey = new Cryptography.Ed25519.PrivateKey(private_key);
                     this.PublicKey = (SuiPublicKeyBase)this.PrivateKey.PublicKey();
                     break;
@@ -101,11 +101,11 @@ namespace Sui.Accounts
             this.SignatureScheme = signature_scheme;
         }
 
-        public Account(SignatureScheme signature_scheme = SignatureScheme.ED25519)
+        public Account(SignatureScheme signature_scheme = SignatureScheme.Ed25519)
         {
             switch (signature_scheme)
             {
-                case SignatureScheme.ED25519:
+                case SignatureScheme.Ed25519:
                     this.PrivateKey = new Cryptography.Ed25519.PrivateKey();
                     this.PublicKey = (SuiPublicKeyBase)this.PrivateKey.PublicKey();
                     break;

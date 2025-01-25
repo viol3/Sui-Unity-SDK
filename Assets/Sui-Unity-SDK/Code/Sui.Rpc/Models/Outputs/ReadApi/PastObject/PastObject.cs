@@ -43,6 +43,7 @@ namespace Sui.Rpc.Models
         /// The version of the past object.
         /// </summary>
         [JsonProperty("version")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public string Version { get; internal set; }
 
         protected internal PastObject

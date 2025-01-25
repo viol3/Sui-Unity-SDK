@@ -1,8 +1,8 @@
 //
-//  PublicKey.cs
+//  BigIntegerConverter.cs
 //  Sui-Unity-SDK
 //
-//  Copyright (c) 2024 OpenDive
+//  Copyright (c) 2025 OpenDive
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -23,26 +23,32 @@
 //  THE SOFTWARE.
 //
 
-using static Sui.Cryptography.SignatureUtils;
+using System;
+using System.Numerics;
+using Unity.Plastic.Newtonsoft.Json;
 
-namespace Sui.Cryptography.Ed25519
+namespace Sui.Rpc
 {
-    /// <summary>
-    /// Implements an ED25519 public key functionality.
-    /// </summary>
-    public class PublicKey : SuiPublicKeyBase
+    public class BigIntegerConverter : JsonConverter
     {
-        public override SignatureScheme SignatureScheme { get => SignatureScheme.Ed25519; }
+        public override bool CanConvert(Type objectType)
+        {
+            return objectType == typeof(BigInteger) || objectType == typeof(BigInteger?);
+        }
 
-        public override int KeyLength { get => SignatureSchemeToSize.ED25519; }
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            if (reader.TokenType == JsonToken.Null)
+                return null;
 
-        public PublicKey(byte[] public_key) : base(public_key) { }
+            return reader.TokenType == JsonToken.Integer ?
+                new BigInteger((long)reader.Value) :
+                BigInteger.Parse(reader.Value.ToString());
+        }
 
-        public PublicKey(string public_key) : base(public_key) { }
-
-        public override byte Flag() => SignatureSchemeToFlag.ED25519;
-
-        public override bool Verify(byte[] message, byte[] signature)
-            => Chaos.NaCl.Ed25519.Verify(signature, message, this._key_bytes);
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            writer.WriteValue(value.ToString());
+        }
     }
 }
