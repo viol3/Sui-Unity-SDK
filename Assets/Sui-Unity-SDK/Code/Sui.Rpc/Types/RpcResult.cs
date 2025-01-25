@@ -30,8 +30,11 @@ using Sui.Utilities;
 
 namespace Sui.Rpc
 {
+    // TODO: Check
     [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy),
         ItemNullValueHandling = NullValueHandling.Ignore)]
+    //[JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy),
+    //    ItemNullValueHandling = NullValueHandling.Include)]
     public class RpcResult<T> : ResultBase<T>
     {
         /// <summary>

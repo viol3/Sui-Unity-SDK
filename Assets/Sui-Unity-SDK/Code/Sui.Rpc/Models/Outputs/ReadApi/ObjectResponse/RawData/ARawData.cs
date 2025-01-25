@@ -46,6 +46,7 @@ namespace Sui.Rpc.Models
         /// always loaded at their latest version.</para>
         /// </summary>
         [JsonProperty("version")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger Version { get; internal set; }
 
         public ARawData(BigInteger version)

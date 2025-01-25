@@ -135,6 +135,7 @@ namespace Sui.Rpc.Models
         /// The epoch at which this pool became active.
         /// </summary>
         [JsonProperty("stakingPoolActivationEpoch", NullValueHandling = NullValueHandling.Include)]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger? StakingPoolActivationEpoch { get; internal set; }
 
         /// <summary>
@@ -142,42 +143,49 @@ namespace Sui.Rpc.Models
         /// `null` = {pre-active, active}
         /// </summary>
         [JsonProperty("stakingPoolDeactivationEpoch", NullValueHandling = NullValueHandling.Include)]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger? StakingPoolDeactivationEpoch { get; internal set; }
 
         /// <summary>
         /// The total number of SUI tokens in this pool.
         /// </summary>
         [JsonProperty("stakingPoolSuiBalance", NullValueHandling = NullValueHandling.Include)]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger? StakingPoolSuiBalance { get; internal set; }
 
         /// <summary>
         /// The epoch stake rewards will be added here at the end of each epoch.
         /// </summary>
         [JsonProperty("rewardsPool", NullValueHandling = NullValueHandling.Include)]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger? RewardsPool { get; internal set; }
 
         /// <summary>
         /// Total number of pool tokens issued by the pool.
         /// </summary>
         [JsonProperty("poolTokenBalance")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger PoolTokenBalance { get; internal set; }
 
         /// <summary>
         /// Pending stake amount for this epoch.
         /// </summary>
         [JsonProperty("pendingStake")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger PendingStake { get; internal set; }
 
         /// <summary>
         /// Pending stake withdrawn during the current epoch, emptied at epoch boundaries.
         /// </summary>
         [JsonProperty("pendingTotalSuiWithdraw")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger PendingTotalSuiWithdraw { get; internal set; }
 
         /// <summary>
         /// Pending pool token withdrawn during the current epoch, emptied at epoch boundaries.
         /// </summary>
         [JsonProperty("pendingPoolTokenWithdraw")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger PendingPoolTokenWithdraw { get; internal set; }
 
         /// <summary>
@@ -190,6 +198,7 @@ namespace Sui.Rpc.Models
         /// Number of exchange rates in the table.
         /// </summary>
         [JsonProperty("exchangeRatesSize")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger ExchangeRatesSize { get; internal set; }
 
         #endregion

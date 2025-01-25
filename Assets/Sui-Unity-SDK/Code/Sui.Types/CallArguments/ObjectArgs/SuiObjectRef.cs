@@ -29,6 +29,7 @@ using Unity.Plastic.Newtonsoft.Json;
 using OpenDive.BCS;
 using Sui.Accounts;
 using Sui.Utilities;
+using Sui.Rpc;
 
 namespace Sui.Types
 {
@@ -46,6 +47,7 @@ namespace Sui.Types
         /// The version of the object.
         /// </summary>
         [JsonProperty("version")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger Version { get; set; }
 
         /// <summary>

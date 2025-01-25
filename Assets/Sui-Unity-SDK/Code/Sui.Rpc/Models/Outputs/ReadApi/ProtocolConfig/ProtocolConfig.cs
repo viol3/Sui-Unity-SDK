@@ -23,13 +23,9 @@
 //  THE SOFTWARE.
 //
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using Unity.Plastic.Newtonsoft.Json;
-using Unity.Plastic.Newtonsoft.Json.Linq;
-using Sui.Utilities;
 
 namespace Sui.Rpc.Models
 {
@@ -44,18 +40,21 @@ namespace Sui.Rpc.Models
         /// A `BigInteger` representing the minimum supported protocol version.
         /// </summary>
         [JsonProperty("minSupportedProtocolVersion")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger MinSupportedProtocolVersion { get; internal set; }
 
         /// <summary>
         /// A `BigInteger` representing the maximum supported protocol version.
         /// </summary>
         [JsonProperty("maxSupportedProtocolVersion")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger MaxSupportedProtocolVersion { get; internal set; }
 
         /// <summary>
         /// A `BigInteger` representing the current protocol version.
         /// </summary>
         [JsonProperty("protocolVersion")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger ProtocolVersion { get; internal set; }
 
         /// <summary>

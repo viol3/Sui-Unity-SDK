@@ -69,6 +69,7 @@ namespace Sui.Rpc.Models
         /// A `BigInteger` representing the version of the dynamic field.
         /// </summary>
         [JsonProperty("version")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger Version { get; internal set; }
 
         /// <summary>
