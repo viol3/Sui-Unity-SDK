@@ -41,6 +41,7 @@ namespace Sui.Rpc.Models
         /// This cost is associated with the execution of smart contract code or transaction processing.
         /// </summary>
         [JsonProperty("computationCost")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger ComputationCost { get; internal set; }
 
         /// <summary>
@@ -48,6 +49,7 @@ namespace Sui.Rpc.Models
         /// This can include costs related to saving data on the blockchain.
         /// </summary>
         [JsonProperty("storageCost")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger StorageCost { get; internal set; }
 
         /// <summary>
@@ -55,6 +57,7 @@ namespace Sui.Rpc.Models
         /// This can include any reductions or refunds on the overall storage cost.
         /// </summary>
         [JsonProperty("storageRebate")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger StorageRebate { get; internal set; }
 
         /// <summary>
@@ -62,6 +65,7 @@ namespace Sui.Rpc.Models
         /// This refers to the portion of the storage cost that cannot be recovered or refunded.
         /// </summary>
         [JsonProperty("nonRefundableStorageFee")]
+        [JsonConverter(typeof(BigIntegerConverter))]
         public BigInteger NonRefundableStorageFee { get; internal set; }
     }
 }
