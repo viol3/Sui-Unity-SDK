@@ -47,7 +47,7 @@ namespace OpenDive.BCS
 
         public void Serialize(Serialization serializer) => serializer.SerializeBytes(this.Values);
 
-        public ISerializable Deserialize(Deserialization deserializer) => new Bytes(deserializer.ToBytes());
+        public static ISerializable Deserialize(Deserialization deserializer) => new Bytes(deserializer.ToBytes());
 
         public override bool Equals(object other)
         {

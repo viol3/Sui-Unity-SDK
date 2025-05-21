@@ -109,9 +109,7 @@ namespace Sui.ZKLogin.SDK
         public static string JwtToAddress(string jwt, string userSalt, bool legacyAddress = false)
         {
             LengthChecks(jwt);
-
             JWT decodedJWT = JWTDecoder.DecodeJWT(jwt);
-
             return JwtToAddress(decodedJWT, userSalt, legacyAddress);
         }
 
@@ -157,6 +155,12 @@ namespace Sui.ZKLogin.SDK
         }
     }
 
+    /// <summary>
+    /// Object we pass to compute ZK Login Address
+    /// 
+    /// See:
+    /// https://github.com/MystenLabs/ts-sdks/blob/a4bd7214e6090c2da2d325807073404033758b13/packages/typescript/src/zklogin/address.ts#L79
+    /// </summary>
     public class ZkLoginAddressOptions
     {
         public string ClaimName { get; set; }

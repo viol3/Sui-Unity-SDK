@@ -207,6 +207,17 @@ namespace Sui.Cryptography
         /// <returns>The signature as a base64 string.</returns>
         public string ToBase64() => this.SignatureBase64;
 
+        /// <summary>
+        /// Decodes a Base64‐encoded string into the original byte array.
+        /// </summary>
+        public static byte[] FromBase64(string base64String)
+        {
+            if (string.IsNullOrEmpty(base64String))
+                throw new ArgumentException("Input must be a non-empty Base64 string", nameof(base64String));
+
+            return Convert.FromBase64String(base64String);
+        }
+
         public override int GetHashCode() => this.ToString().GetHashCode();
 
         public override string ToString() => this.ToBase64();
