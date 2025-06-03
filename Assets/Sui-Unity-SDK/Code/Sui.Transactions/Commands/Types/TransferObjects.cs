@@ -30,6 +30,8 @@ namespace Sui.Transactions
 {
     /// <summary>
     /// Transfer vector of objects to a receiver.
+    ///
+    /// TransferObjects and MergeCoins do not produce any results (an empty result vector)
     /// </summary>
     public class TransferObjects : ICommand
     {
