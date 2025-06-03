@@ -35,6 +35,8 @@ namespace Sui.Transactions
     /// A Move Call - any public Move function can be called via
     /// this transaction. The results can be used that instant to pass
     /// into the next transaction.
+    ///
+    /// MoveCall invokes either an entry or a public Move function in a published package.
     /// </summary>
     public class MoveCall : ICommand
     {
