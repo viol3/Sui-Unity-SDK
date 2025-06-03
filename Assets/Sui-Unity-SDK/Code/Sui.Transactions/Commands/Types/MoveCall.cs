@@ -37,6 +37,22 @@ namespace Sui.Transactions
     /// into the next transaction.
     ///
     /// MoveCall invokes either an entry or a public Move function in a published package.
+    ///
+    /// This command has the form MoveCall(Package, Module, Function, TypeArgs, Args)
+    /// where `Package::Module::Function` combine to specify the Move function
+    /// being called, TypeArgs is a vector of type arguments to that function,
+    /// and Args is a vector of arguments for the Move function.
+    ///
+    /// - The package Package: ObjectID is the Object ID of the package containing the module being called.\
+    /// - The module Module: String is the name of the module containing the function being called.
+    /// - The function Function: String is the name of the function being called.
+    /// - The type arguments TypeArgs: [TypeTag] are the type arguments to the function being called.
+    ///     They must satisfy the constraints of the type parameters for the function
+    /// - The arguments Args: [Argument] are the arguments to the function being called.
+    ///     The arguments must be valid for the parameters as specified in the function's signature.
+    ///
+    /// Unlike the other commands, the usage of the arguments and the number of
+    /// results are dynamic in that they both depend on the signature of the Move function being called.
     /// </summary>
     public class MoveCall : ICommand
     {
@@ -46,12 +62,14 @@ namespace Sui.Transactions
         public SuiMoveNormalizedStructType Target { get; set; }
 
         /// <summary>
-        /// An array of type tags used as type arguments for the move call.
+        /// The type arguments TypeArgs: [TypeTag] are the type arguments to the function being called.
+        /// They must satisfy the constraints of the type parameters for the function.
         /// </summary>
         public SerializableTypeTag[] TypeArguments { get; set; }
 
         /// <summary>
-        /// An array of arguments used for executing the move call.
+        /// The arguments Args: [Argument] are the arguments to the function being called.
+        /// The arguments must be valid for the parameters as specified in the function's signature.
         /// </summary>
         public TransactionArgument[] Arguments { get; set; }
 
