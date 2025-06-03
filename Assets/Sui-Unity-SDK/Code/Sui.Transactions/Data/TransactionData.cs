@@ -34,7 +34,8 @@ namespace Sui.Transactions.Data
     public class TransactionData : ISerializable
     {
         /// <summary>
-        /// The version of the transaction.
+        /// The version of the transaction. For now, it can be:
+        /// - V1
         /// </summary>
         public TransactionType Type { get; set; }
 
