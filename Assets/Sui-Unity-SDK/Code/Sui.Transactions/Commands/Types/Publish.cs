@@ -32,6 +32,9 @@ namespace Sui.Transactions
 {
     /// <summary>
     /// Publish a Move module.
+    ///
+    /// Publish: returns the upgrade capability, `sui::package::UpgradeCap`,
+    /// for the newly published package.
     /// </summary>
     public class Publish : ICommand
     {
