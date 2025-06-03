@@ -44,7 +44,7 @@ namespace Sui.Transactions
 {
     /// <summary>
     /// A class that represents the inputted transaction commands and other configuration values
-    /// used for a transactio on the Sui network.
+    /// used for a transaction on the Sui network.
     /// </summary>
     public class TransactionBlock : ReturnBase
     {
