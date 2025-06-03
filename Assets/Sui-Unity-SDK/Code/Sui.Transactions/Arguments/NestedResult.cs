@@ -31,6 +31,16 @@ namespace Sui.Transactions
     /// Similar to a `Result` (`TransactionResult` but it accesses a nested result).
     /// Currently, the only usage of this is to access a value from
     /// a Move call with multiple return values.
+    ///
+    /// NestedResult(u16, u16) uses the value from a previous command.
+    /// The first u16 is the index of the command in the command vector,
+    /// and the second u16 is the index of the result in the result vector
+    /// of that command.
+    /// For example, given a command vector of
+    /// [MoveCall1, MoveCall2, TransferObjects]
+    /// where MoveCall2 has a result vector of [Value1, Value2],
+    /// Value1 would be accessed with NestedResult(1, 0)
+    /// and Value2 would be accessed with NestedResult(1, 1).
     /// </summary>
     public class NestedResult : ITransactionArgument
     {
