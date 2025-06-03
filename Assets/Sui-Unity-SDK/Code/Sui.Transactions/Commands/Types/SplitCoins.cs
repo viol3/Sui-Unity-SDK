@@ -30,6 +30,10 @@ namespace Sui.Transactions
 {
     /// <summary>
     /// Split `amount` from a `coin`.
+    ///
+    /// SplitCoins: produces (one or more) coins from a single coin.
+    /// The type of each coin is `sui::coin::Coin<T>`
+    /// where the specific coin type T matches the coin being split.
     /// </summary>
     public class SplitCoins : ICommand
     {
