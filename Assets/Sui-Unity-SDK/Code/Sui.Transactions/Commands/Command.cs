@@ -30,14 +30,22 @@ using Sui.Utilities;
 namespace Sui.Transactions
 {
     /// <summary>
-    /// <para>A Command is an instruction to be executed on-chain. A Command can be:</para>
-    /// <para>MakeMove, MergeCoin, MoveCall, Publish, SplitCOins, TransferObject, Upgrade</para>
+    /// A container class for a Transaction Command.
+    /// A Transaction Command is an instruction to be executed on-chain.
+    /// A Command can be:MakeMove, MergeCoin, MoveCall, Publish, SplitCOins, TransferObject, Upgrade
     /// </summary>
     [JsonConverter(typeof(CommandConverter))]
     public class Command : ReturnBase, ISerializable
     {
         /// <summary>
-        /// The kind of command.
+        /// The kind of command. Can either be:
+        /// - MoveCall,
+        /// - TransferObjects,
+        /// - SplitCoins,
+        /// - MergeCoins,
+        /// - Publish,
+        /// - Upgrade,
+        /// MakeMoveVec,
         /// </summary>
         public CommandKind Kind { get; private set; }
 
