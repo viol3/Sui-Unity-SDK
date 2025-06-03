@@ -39,7 +39,11 @@ namespace Sui.Transactions
     public class TransactionKind : ReturnBase, ISerializable
     {
         /// <summary>
-        /// The transaction's type.
+        /// The transaction's type. Can either be:
+        /// - ProgrammableTransaction,
+        /// - ChangeEpoch,
+        /// - Genesis,
+        /// - ConsensusCommitPrologue
         /// </summary>
         public TransactionKindType Type { get; internal set; }
 
