@@ -32,6 +32,9 @@ namespace Sui.Transactions
 {
     /// <summary>
     /// A command that allows a user to upgrade an existing package object.
+    ///
+    /// Upgrade: returns the upgrade receipt, `sui::package::UpgradeReceipt`,
+    /// for the upgraded package.
     /// </summary>
     public class Upgrade : ICommand
     {
