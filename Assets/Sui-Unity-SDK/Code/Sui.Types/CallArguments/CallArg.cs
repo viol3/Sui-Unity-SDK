@@ -30,18 +30,26 @@ using Unity.Plastic.Newtonsoft.Json;
 namespace Sui.Types
 {
     /// <summary>
-    /// <para>A Sui type that represents a transaction call arguments.
-    /// A call arg can be a:</para>
+    /// A Sui type that represents a transaction call arguments.
+    /// A call arg can be a:
     /// 
-    /// <para>(1) A vector / list of byte (e.g., not a struct nor object).</para>
-    /// <para>(2) An ObjectRef (also known as object arg).</para>
-    /// <para>(3) Or a vector / list of ObjectRef.</para>
+    /// - A vector / list of byte (e.g., not a struct nor object).
+    /// - An ObjectRef (also known as object arg).
+    /// - Or a vector / list of ObjectRef.
+    ///
+    /// NOTE: For historical reasons, Input is CallArg in the Rust implementation.
+    /// 
+    /// NOTE: Inputs and results are the two types of values you can use in transaction commands.
+    ///     Inputs are the values that are provided to the PTB
     /// </summary>
     [JsonConverter(typeof(CallArgumentConverter))]
     public class CallArg : ReturnBase, ISerializable
     {
         /// <summary>
-        /// The call argument's type.
+        /// The call argument's type. Can be either:
+        /// - Pure (the pure values represent simple Move values, such as u64 or String values)
+        /// - Object (the objects are either owned by the sender or are shared/immutable objects)
+        /// - ObjectVec
         /// </summary>
         public CallArgumentType Type { get; set; }
 
