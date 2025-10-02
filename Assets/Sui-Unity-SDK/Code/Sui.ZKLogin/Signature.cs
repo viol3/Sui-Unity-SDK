@@ -1,8 +1,9 @@
+using NBitcoin.JsonConverters;
+using OpenDive.BCS;
+using Sui.Cryptography;
 using System;
 using System.Numerics;
 using Unity.Plastic.Newtonsoft.Json;
-using OpenDive.BCS;
-using Sui.Cryptography;
 
 namespace Sui.ZKLogin
 {
@@ -115,7 +116,7 @@ namespace Sui.ZKLogin
         public ZkLoginSignatureInputsClaim IssBase64Details { get; set; }
 
         [JsonProperty("headerBase64")]
-        public BigInteger HeaderBase64 { get; set; }
+        public string HeaderBase64 { get; set; }
 
         [JsonProperty("addressSeed")]
         public string AddressSeed { get; set; }
@@ -134,12 +135,15 @@ namespace Sui.ZKLogin
     {
         // Sequence input = new Sequence(new string[] { "a", "abc", "def", "ghi" }.ToList().Select(str => new BString(str)).ToArray());
         [JsonProperty("a")]
+        [JsonConverter(typeof(ZkLoginSequenceJsonConverter))]
         public Sequence A { get; set; } // a: bcs.vector(bcs.string())
 
         [JsonProperty("b")]
+        [JsonConverter(typeof(ZkLoginSequenceJsonConverter))]
         public Sequence B { get; set; } // b: bcs.vector(bcs.vector(bcs.string())),
 
         [JsonProperty("c")]
+        [JsonConverter(typeof(ZkLoginSequenceJsonConverter))]
         public Sequence C { get; set; } // c: bcs.vector(bcs.string()),
 
         public void Serialize(Serialization serializer)

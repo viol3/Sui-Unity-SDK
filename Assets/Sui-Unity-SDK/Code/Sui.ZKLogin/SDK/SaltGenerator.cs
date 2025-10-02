@@ -1,4 +1,5 @@
 ﻿using Org.BouncyCastle.Math;
+using Sui.Utilities;
 using System;
 using System.Security.Cryptography;
 using System.Text;
@@ -50,7 +51,7 @@ public static class SaltGenerator
         return Expand(prk, info, length);
     }
 
-    public static byte[] GenerateUserSalt(string masterSeed, string iss, string aud, string sub)
+    public static byte[] GenerateUserSaltBytes(string masterSeed, string iss, string aud, string sub)
     {
         byte[] ikm = Encoding.UTF8.GetBytes(masterSeed);
         byte[] salt = Encoding.UTF8.GetBytes(iss + "|" + aud);
@@ -59,12 +60,18 @@ public static class SaltGenerator
         return Derive(ikm, salt, info, 16); // 16 byte
     }
 
+    public static BigInteger GenerateUserSalt(string masterSeed, string iss, string aud, string sub)
+    {
+
+        return ToBigInt(GenerateUserSaltBytes(masterSeed, iss, aud, sub)); // 16 byte
+    }
+
     public static string ToHex(byte[] data)
     {
         return System.BitConverter.ToString(data).Replace("-", "").ToLowerInvariant();
     }
 
-    public static BigInteger ToBigInt(byte[] saltBytes)
+    private static BigInteger ToBigInt(byte[] saltBytes)
     {
         if (saltBytes.Length != 16)
             throw new ArgumentException("Salt must be 16 bytes");

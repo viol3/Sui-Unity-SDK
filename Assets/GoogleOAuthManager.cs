@@ -109,6 +109,16 @@ public static class GoogleOAuthManager
         response.OutputStream.Close();
     }
 
+    public static void Dispose()
+    {
+        if (httpListener != null && httpListener.IsListening)
+        {
+            httpListener.Stop();
+            Debug.Log("HttpListener Disposed");
+        }
+        
+    }
+
     // JSON response models
     [Serializable]
     private class TokenResponse
