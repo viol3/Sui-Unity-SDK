@@ -247,6 +247,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _enokiPublicKey: enoki_public_3ed3c88ff07ca65cf46192bbaf8e0787
   _googleClientId: 186512259169-1pj5f5fj8gmeprqhat0nac0dm633lev6.apps.googleusercontent.com
+  _redirectUri: http://localhost:3000/
 --- !u!4 &994698297
 Transform:
   m_ObjectHideFlags: 0

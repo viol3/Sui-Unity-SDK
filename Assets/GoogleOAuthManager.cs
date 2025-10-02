@@ -10,12 +10,11 @@ using UnityEngine.Networking;
 
 public static class GoogleOAuthManager
 {
-    private static string redirectUri = "http://localhost:3000/";
 
     private static HttpListener httpListener;
 
     // Start OAuth flow
-    public static async Task<string> GetJWTFromGoogleLogin(string clientId, string nonce)
+    public static async Task<string> GetJWTFromGoogleLogin(string clientId, string nonce, string redirectUri)
     {
         // Build OAuth URL
         string authUrl = $"https://accounts.google.com/o/oauth2/v2/auth?" +
@@ -31,10 +30,10 @@ public static class GoogleOAuthManager
         Application.OpenURL(authUrl);
 
         // Start local server and wait for callback
-        return await FetchJWT();
+        return await FetchJWT(redirectUri);
     }
 
-    private async static Task<string> FetchJWT()
+    private async static Task<string> FetchJWT(string redirectUri)
     {
         httpListener = new HttpListener();
         httpListener.Prefixes.Add(redirectUri);

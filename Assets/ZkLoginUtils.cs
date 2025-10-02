@@ -42,7 +42,6 @@ public static class ZkLoginUtils
             }
             else
             {
-                Debug.Log("Response: " + request.downloadHandler.text);
                 nonceResult = JsonConvert.DeserializeObject<NonceResponse>(request.downloadHandler.text);
             }
             return nonceResult;
