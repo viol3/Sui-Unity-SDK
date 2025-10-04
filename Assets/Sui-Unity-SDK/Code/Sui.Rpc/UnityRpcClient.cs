@@ -91,6 +91,7 @@ namespace Sui.Rpc
         /// <returns>An asynchronous task that returns a wrapped `T` object.</returns>
         public async Task<RpcResult<T>> SendAsync<T>(RpcRequest rpc_request)
         {
+            string requestJson = JsonConvert.SerializeObject(rpc_request);
             using (UnityWebRequest request = new UnityWebRequest(this.Endpoint, this.POSTMethod))
             {
                 request.uploadHandler = new UploadHandlerRaw
@@ -110,10 +111,9 @@ namespace Sui.Rpc
 
                 while (!request.isDone)
                     await Task.Yield();
-
                 return JsonConvert.DeserializeObject<RpcResult<T>>
                 (
-                    request.downloadHandler.text
+                    request.downloadHandler.text, new BigIntegerJsonConverter()
                 );
             }
         }
