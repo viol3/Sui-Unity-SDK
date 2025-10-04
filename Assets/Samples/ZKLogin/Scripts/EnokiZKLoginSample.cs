@@ -41,7 +41,10 @@ public class EnokiZKLoginSample : MonoBehaviour
     {
         EnokiZKLogin.Init(_network, _enokiPublicKey);
         _client = EnokiZKLogin.GetClient();
-#if UNITY_STANDALONE_WIN || UNITY_EDITOR
+#if UNITY_WEBGL && !UNITY_EDITOR
+        GoogleOAuthWebGLJwtFetcher googleOAuthWebGLJwtFetcher = new GameObject("GoogleOAuthWebGLJwtFetcher").AddComponent<GoogleOAuthWebGLJwtFetcher>();
+        EnokiZKLogin.LoadJwtFetcher(googleOAuthWebGLJwtFetcher);
+#else
         EnokiZKLogin.LoadJwtFetcher(new GoogleOAuthDesktopJwtFetcher(_googleClientId, _redirectUri));
 #endif
         if (PlayerPrefs.HasKey(ZKP_PREF))

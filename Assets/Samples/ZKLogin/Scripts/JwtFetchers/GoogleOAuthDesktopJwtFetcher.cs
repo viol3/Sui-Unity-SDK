@@ -2,27 +2,33 @@ using Sui.ZKLogin.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Unity.VisualScripting.Antlr3.Runtime;
 using UnityEngine;
 using UnityEngine.Networking;
 
+
 public class GoogleOAuthDesktopJwtFetcher : IJwtFetcher
 {
-
     private HttpListener _httpListener;
     private string _clientId;
     private string _redirectUri;
-
     public GoogleOAuthDesktopJwtFetcher(string clientId, string redirectUri)
     {
         _clientId = clientId;
         _redirectUri = redirectUri;
+        Application.quitting += Application_Quitting;
     }
 
-    // Start OAuth flow
+    private void Application_Quitting()
+    {
+        Dispose();
+    }
+
     public async Task<string> FetchJwt(params string[] parameters)
     {
         string nonce = parameters[0];
@@ -40,10 +46,10 @@ public class GoogleOAuthDesktopJwtFetcher : IJwtFetcher
         Application.OpenURL(authUrl);
 
         // Start local server and wait for callback
-        return await FetchJwtWithGoogle(_redirectUri);
+        return await FetchJwtWithHttpListener(_redirectUri);
     }
 
-    private async Task<string> FetchJwtWithGoogle(string redirectUri)
+    private async Task<string> FetchJwtWithHttpListener(string redirectUri)
     {
         _httpListener = new HttpListener();
         _httpListener.Prefixes.Add(redirectUri);
@@ -59,40 +65,51 @@ public class GoogleOAuthDesktopJwtFetcher : IJwtFetcher
             HttpListenerResponse response = context.Response;
 
 
-            string html = @"
-<!DOCTYPE html>
-<html>
-<head>
-<title>Google Login</title>
-</head>
-<body>
-<h1>Processing login...</h1>
-<script>
-    // Extract token from fragment (after #)
-    var fragment = window.location.hash.substring(1);
-    var params = new URLSearchParams(fragment);
-    var idToken = params.get('id_token');
-        
-    if (idToken) {
-        // Redirect to same URL but with query string (?) instead of fragment (#)
-        window.location.href = '/?id_token=' + idToken;
-    } else if (error) {
-        window.location.href = '/?error=' + error;
-    } else {
-        document.body.innerHTML = '<h1>Error!</h1><p>No token received.</p>';
-    }
-</script>
-</body>
-</html>";
-            SendResponse(response, html);
+            string requestHtml = @"
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Google Login</title>
+    </head>
+    <body>
+    <h1>Processing login...</h1>
+    <script>
+        // Extract token from fragment (after #)
+        var fragment = window.location.hash.substring(1);
+        var params = new URLSearchParams(fragment);
+        var idToken = params.get('id_token');
+
+        if (idToken) {
+            // Redirect to same URL but with query string (?) instead of fragment (#)
+            window.location.href = '/?id_token=' + idToken;
+        } else if (error) {
+            window.location.href = '/?error=' + error;
+        } else {
+            document.body.innerHTML = '<h1>Error!</h1><p>No token received.</p>';
+        }
+    </script>
+    </body>
+    </html>";
+
+            string responseHtml = @"
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Google Login</title>
+    </head>
+    <body>
+    <h1>You are done!</h1>
+    </body>
+    </html>";
+            SendResponse(response, requestHtml);
 
             context = await _httpListener.GetContextAsync();
             request = context.Request;
             response = context.Response;
-
+            SendResponse(response, responseHtml);
             // Parse URL parameters
             string token = request.QueryString.Get("id_token");
-            
+
             //await StartLocalServer();
             _httpListener.Stop();
             return token;
@@ -126,7 +143,6 @@ public class GoogleOAuthDesktopJwtFetcher : IJwtFetcher
             _httpListener.Stop();
             Debug.Log("HttpListener Disposed");
         }
-        
     }
 
     // JSON response models

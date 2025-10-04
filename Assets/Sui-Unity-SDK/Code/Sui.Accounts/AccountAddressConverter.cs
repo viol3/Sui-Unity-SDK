@@ -1,6 +1,6 @@
 using System;
 using Sui.Accounts;
-using Unity.Plastic.Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace Sui.Rpc.Models
 {

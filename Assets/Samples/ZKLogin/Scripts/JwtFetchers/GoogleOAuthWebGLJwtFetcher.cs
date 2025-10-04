@@ -1,0 +1,31 @@
+using Sui.ZKLogin.Utils;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using UnityEngine;
+
+
+public class GoogleOAuthWebGLJwtFetcher : MonoBehaviour, IJwtFetcher
+{
+    string _jwt = "";
+    [DllImport("__Internal")]
+    private static extern void GoogleLogin(string nonce);
+
+    public async Task<string> FetchJwt(params string[] parameters)
+    {
+        _jwt = "";
+        string nonce = parameters[0];
+        GoogleLogin(nonce);
+        while(string.IsNullOrEmpty(_jwt))
+        {
+            await Task.Yield();
+        }
+        return _jwt;
+    }
+
+    public void OnJwtReceived(string token)
+    {
+        Debug.Log("jwt received");
+        _jwt = token;
+    }
+   
+}

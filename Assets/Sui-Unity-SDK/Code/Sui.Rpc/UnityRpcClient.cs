@@ -29,7 +29,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
-using Unity.Plastic.Newtonsoft.Json;
+using Newtonsoft.Json;
 using UnityEngine.Networking;
 
 namespace Sui.Rpc
@@ -103,7 +103,7 @@ namespace Sui.Rpc
                         JsonConvert.SerializeObject
                         (
                             rpc_request,
-                            new Unity.Plastic.Newtonsoft.Json.Converters.StringEnumConverter()
+                            new Newtonsoft.Json.Converters.StringEnumConverter()
                         )
                     )
                 );

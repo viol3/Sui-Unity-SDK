@@ -258,6 +258,11 @@ namespace Sui.ZKLogin
 
             return response;
         }
+
+        public static void Dispose()
+        {
+
+        }
     }
 
 }
