@@ -23,8 +23,10 @@
 //  THE SOFTWARE.
 //
 
+using Sui.ZKLogin.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 using Unity.Plastic.Newtonsoft.Json;
@@ -110,7 +112,16 @@ namespace Sui.Rpc
                 request.SendWebRequest();
 
                 while (!request.isDone)
+                {
                     await Task.Yield();
+                    if(request.result == UnityWebRequest.Result.ConnectionError ||
+                    request.result == UnityWebRequest.Result.ProtocolError ||
+                    request.result == UnityWebRequest.Result.DataProcessingError
+                    )
+                    {
+                        return new RpcResult<T>(default, new Client.RpcError(-1, request.error, null));
+                    }
+                }            
                 return JsonConvert.DeserializeObject<RpcResult<T>>
                 (
                     request.downloadHandler.text, new BigIntegerJsonConverter()

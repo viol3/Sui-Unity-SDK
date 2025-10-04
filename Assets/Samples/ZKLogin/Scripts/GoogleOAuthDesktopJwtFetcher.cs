@@ -1,3 +1,4 @@
+using Sui.ZKLogin.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,18 +9,27 @@ using Unity.VisualScripting.Antlr3.Runtime;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public static class GoogleOAuthManager
+public class GoogleOAuthDesktopJwtFetcher : IJwtFetcher
 {
 
-    private static HttpListener httpListener;
+    private HttpListener _httpListener;
+    private string _clientId;
+    private string _redirectUri;
+
+    public GoogleOAuthDesktopJwtFetcher(string clientId, string redirectUri)
+    {
+        _clientId = clientId;
+        _redirectUri = redirectUri;
+    }
 
     // Start OAuth flow
-    public static async Task<string> GetJWTFromGoogleLogin(string clientId, string nonce, string redirectUri)
+    public async Task<string> FetchJwt(params string[] parameters)
     {
+        string nonce = parameters[0];
         // Build OAuth URL
         string authUrl = $"https://accounts.google.com/o/oauth2/v2/auth?" +
-            $"client_id={clientId}" +
-            $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
+            $"client_id={_clientId}" +
+            $"&redirect_uri={Uri.EscapeDataString(_redirectUri)}" +
             $"&response_type=id_token" +
             $"&scope=openid" +
             $"&nonce=" + nonce;
@@ -30,21 +40,21 @@ public static class GoogleOAuthManager
         Application.OpenURL(authUrl);
 
         // Start local server and wait for callback
-        return await FetchJWT(redirectUri);
+        return await FetchJwtWithGoogle(_redirectUri);
     }
 
-    private async static Task<string> FetchJWT(string redirectUri)
+    private async Task<string> FetchJwtWithGoogle(string redirectUri)
     {
-        httpListener = new HttpListener();
-        httpListener.Prefixes.Add(redirectUri);
+        _httpListener = new HttpListener();
+        _httpListener.Prefixes.Add(redirectUri);
 
         try
         {
-            httpListener.Start();
+            _httpListener.Start();
             Debug.Log($"Local server started: {redirectUri}");
 
             // Wait for callback
-            HttpListenerContext context = await httpListener.GetContextAsync();
+            HttpListenerContext context = await _httpListener.GetContextAsync();
             HttpListenerRequest request = context.Request;
             HttpListenerResponse response = context.Response;
 
@@ -76,7 +86,7 @@ public static class GoogleOAuthManager
 </html>";
             SendResponse(response, html);
 
-            context = await httpListener.GetContextAsync();
+            context = await _httpListener.GetContextAsync();
             request = context.Request;
             response = context.Response;
 
@@ -84,7 +94,7 @@ public static class GoogleOAuthManager
             string token = request.QueryString.Get("id_token");
             
             //await StartLocalServer();
-            httpListener.Stop();
+            _httpListener.Stop();
             return token;
 
 
@@ -92,9 +102,9 @@ public static class GoogleOAuthManager
         catch (Exception ex)
         {
             Debug.LogError($"Server error: {ex.Message}");
-            if (httpListener != null && httpListener.IsListening)
+            if (_httpListener != null && _httpListener.IsListening)
             {
-                httpListener.Stop();
+                _httpListener.Stop();
             }
             return "";
         }
@@ -109,11 +119,11 @@ public static class GoogleOAuthManager
         response.OutputStream.Close();
     }
 
-    public static void Dispose()
+    public void Dispose()
     {
-        if (httpListener != null && httpListener.IsListening)
+        if (_httpListener != null && _httpListener.IsListening)
         {
-            httpListener.Stop();
+            _httpListener.Stop();
             Debug.Log("HttpListener Disposed");
         }
         
@@ -131,7 +141,7 @@ public static class GoogleOAuthManager
     }
 
     [Serializable]
-    public class UserInfo
+    private class UserInfo
     {
         public string id;
         public string email;
