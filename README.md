@@ -427,8 +427,6 @@ Save your clientId and clientSecret for later use.
 
 - EnokiZKLogin.cs
 - EnokiZkLoginUtils.cs
-- GoogleOAuthDesktopJwtFetcher.cs
-- GoogleOAuthWebGLJwtFetcher.cs
 - IJwtFetcher.cs (interface)
 - And Samples folder.
 
