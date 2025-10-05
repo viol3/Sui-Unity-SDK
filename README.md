@@ -432,7 +432,11 @@ Save your clientId and clientSecret for later use.
 
 #### Platform Support
 1. Desktop [Windows(tested), Mac(not tested), Linux(not tested)]
-2. Uses GoogleOAuthDesktopJwtFetcher which:
+2. Mobile [Android(tested), iOS(not tested)]
+3. WebGL(tested)
+
+#### Desktop
+Uses GoogleOAuthDesktopJwtFetcher which:
 
 - Opens browser for Google authentication
 - Starts local HTTP server on specified port (default: 3000)
@@ -448,6 +452,7 @@ Uses GoogleOAuthWebGLJwtFetcher which:
 
 ### Enoki-ZK Login Security Considerations
 ⚠️ CRITICAL: PlayerPrefs Storage Warning
+
 The _saveZKPOnDevice option uses Unity's PlayerPrefs which:
 
 - Stores data in plain text
