@@ -124,7 +124,7 @@ namespace Sui.Rpc
                 }            
                 return JsonConvert.DeserializeObject<RpcResult<T>>
                 (
-                    request.downloadHandler.text, new BigIntegerJsonConverter()
+                    request.downloadHandler.text
                 );
             }
         }

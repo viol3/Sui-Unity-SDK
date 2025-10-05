@@ -113,12 +113,10 @@
 	
 
 <script>
-  function googleLogin(nonce) 
+  function googleLogin(clientId, nonce) 
   {
-	const clientId = "186512259169-1pj5f5fj8gmeprqhat0nac0dm633lev6.apps.googleusercontent.com";
     const redirectUri = window.location.origin + window.location.pathname;
 	console.log(redirectUri)
-	console.log("nonce => ", nonce)
     const scope = "openid email profile";
 	google.accounts.id.initialize(
 	{

@@ -6,15 +6,21 @@ using UnityEngine;
 
 public class GoogleOAuthWebGLJwtFetcher : MonoBehaviour, IJwtFetcher
 {
+    string _googleclientId;
     string _jwt = "";
     [DllImport("__Internal")]
-    private static extern void GoogleLogin(string nonce);
+    private static extern void GoogleLogin(string clientId, string nonce);
+
+    public void SetGoogleClientId(string googleclientId)
+    {  
+        _googleclientId = googleclientId; 
+    }
 
     public async Task<string> FetchJwt(params string[] parameters)
     {
         _jwt = "";
         string nonce = parameters[0];
-        GoogleLogin(nonce);
+        GoogleLogin(_googleclientId, nonce);
         while(string.IsNullOrEmpty(_jwt))
         {
             await Task.Yield();

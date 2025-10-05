@@ -79,6 +79,7 @@ namespace Sui.ZKLogin
             // For specific requirements, you can create your own JwtFetcher classes which implement the IJwtFetcher interface.
 #if UNITY_WEBGL && !UNITY_EDITOR
         GoogleOAuthWebGLJwtFetcher googleOAuthWebGLJwtFetcher = new GameObject("GoogleOAuthWebGLJwtFetcher").AddComponent<GoogleOAuthWebGLJwtFetcher>();
+        googleOAuthWebGLJwtFetcher.SetGoogleClientId(_googleClientId);
         EnokiZKLogin.LoadJwtFetcher(googleOAuthWebGLJwtFetcher);
 #else
             EnokiZKLogin.LoadJwtFetcher(new GoogleOAuthDesktopJwtFetcher(_googleClientId, _redirectUri));

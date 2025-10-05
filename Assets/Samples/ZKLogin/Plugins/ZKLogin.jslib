@@ -7,10 +7,11 @@ mergeInto(LibraryManager.library,
 	window.open(url,'_blank');
   },
   
-  GoogleLogin : function(nonce)
+  GoogleLogin : function(clientId, nonce)
   {
 	nonce = UTF8ToString(nonce);
-	window.googleLogin(nonce);
+	clientId = UTF8ToString(clientId);
+	window.googleLogin(clientId, nonce);
   },
 
 
