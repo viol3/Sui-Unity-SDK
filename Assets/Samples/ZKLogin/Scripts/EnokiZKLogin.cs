@@ -84,22 +84,34 @@ namespace Sui.ZKLogin
                     _client = new SuiClient(Constants.LocalnetConnection);
                     break;
                 default:
-                    Debug.LogWarning($"Unknown network:{_network}, creating client with testnet");
+                    Debug.LogWarning($"Unknown network:{_network}, creating client with testnet...");
                     _client = new SuiClient(Constants.TestnetConnection);
                     break;
             }
         }
 
+        /// <summary>
+        /// Sets a custom SuiClient instance for the ZKLogin manager.
+        /// </summary>
+        /// <param name="client">The SuiClient instance to use.</param>
         public static void SetClient(SuiClient client)
         {
             _client = client;
         }
 
+        /// <summary>
+        /// Gets the current SuiClient instance being used by the ZKLogin manager.
+        /// </summary>
+        /// <returns>The active SuiClient instance.</returns>
         public static SuiClient GetClient() 
         { 
             return _client; 
         }
 
+        /// <summary>
+        /// Retrieves the Sui blockchain address associated with the currently logged-in ZKLogin user.
+        /// </summary>
+        /// <returns>The Sui address as a string, or null if no user is logged in.</returns>
         public static string GetSuiAddress()
         {
             if (_zkLoginUser == null)
@@ -110,61 +122,110 @@ namespace Sui.ZKLogin
             return _zkLoginUser.data.address;
         }
 
+        /// <summary>
+        /// Checks whether the ZKLogin manager has been initialized.
+        /// </summary>
+        /// <returns>True if initialized, false otherwise.</returns>
         public static bool IsInited()
         {
             return _inited;
         }
 
+        /// <summary>
+        /// Checks whether a user is currently logged in with ZKLogin.
+        /// </summary>
+        /// <returns>True if a user is logged in (ZKP response exists), false otherwise.</returns>
         public static bool IsLogged()
         {
             return _zkpResponse != null;
-        } 
+        }
 
+        /// <summary>
+        /// Gets the current ZKLogin user data.
+        /// </summary>
+        /// <returns>The EnokiZKLoginUser object containing user information.</returns>
         public static EnokiZKLoginUser GetZKLoginUser()
         {
             return _zkLoginUser;
         }
 
+        /// <summary>
+        /// Gets the current Zero-Knowledge Proof (ZKP) response.
+        /// </summary>
+        /// <returns>The EnokiZKPResponse object containing ZKP data.</returns>
         public static EnokiZKPResponse GetZKP()
         {
             return _zkpResponse;
         }
 
+        /// <summary>
+        /// Gets the ephemeral account used for temporary key generation.
+        /// </summary>
+        /// <returns>The ephemeral Account instance.</returns>
         public static Account GetEphemeralAccount()
         { 
             return _ephemeralAccount; 
         }
 
+        /// <summary>
+        /// Gets the maximum epoch value for the current ZKLogin session.
+        /// </summary>
+        /// <returns>The maximum epoch as an integer.</returns>
         public static int GetMaxEpoch()
         { 
             return _maxEpoch; 
         }
 
+        /// <summary>
+        /// Loads a previously obtained ZKP response into the manager.
+        /// </summary>
+        /// <param name="zkpResponse">The ZKP response to load.</param>
         public static void LoadZKPResponse(EnokiZKPResponse zkpResponse)
         {
             _zkpResponse = zkpResponse;
         }
 
+        /// <summary>
+        /// Loads previously obtained ZKLogin user data into the manager.
+        /// </summary>
+        /// <param name="zkLoginUser">The ZKLogin user data to load.</param>
         public static void LoadZKLoginUser(EnokiZKLoginUser zkLoginUser)
         {
             _zkLoginUser = zkLoginUser;
         }
 
+        /// <summary>
+        /// Loads a previously created ephemeral account into the manager.
+        /// </summary>
+        /// <param name="ephemeralAccount">The ephemeral account to load.</param>
         public static void LoadEphemeralKey(Account ephemeralAccount)
         {
             _ephemeralAccount = ephemeralAccount;
         }
 
+        /// <summary>
+        /// Loads a previously obtained maximum epoch value into the manager.
+        /// </summary>
+        /// <param name="maxEpoch">The maximum epoch value to load.</param>
         public static void LoadMaxEpoch(int maxEpoch)
         {
             _maxEpoch = maxEpoch;
         }
 
+        /// <summary>
+        /// Loads a custom JWT fetcher implementation for handling JWT token retrieval.
+        /// </summary>
+        /// <param name="jwtFetcher">The IJwtFetcher implementation to use.</param>
         public static void LoadJwtFetcher(IJwtFetcher jwtFetcher)
         {
             _jwtFetcher = jwtFetcher;
         }
 
+        /// <summary>
+        /// Performs the ZKLogin authentication flow, including nonce generation, JWT token fetching,
+        /// and Zero-Knowledge Proof generation.
+        /// </summary>
+        /// <returns>A task that returns the EnokiZKPResponse upon successful login, or null if login fails.</returns>
         public static async Task<EnokiZKPResponse> Login()
         {
             if (!_inited)
@@ -201,6 +262,10 @@ namespace Sui.ZKLogin
             return _zkpResponse;
         }
 
+        /// <summary>
+        /// Logs out the current user by clearing ZKLogin session data including user information,
+        /// ZKP response, and max epoch.
+        /// </summary>
         public static void Logout()
         {
             if (!_inited)
@@ -213,6 +278,11 @@ namespace Sui.ZKLogin
             _maxEpoch = 0;
         }
 
+        /// <summary>
+        /// Validates whether the current maximum epoch is still valid by comparing it against
+        /// the latest Sui system state. Logs out automatically if the epoch has expired.
+        /// </summary>
+        /// <returns>A task representing the asynchronous validation operation.</returns>
         public static async Task ValidateMaxEpoch()
         {
             RpcResult<SuiSystemSummary> summary = await _client.GetLatestSuiSystemStateAsync();
@@ -223,6 +293,12 @@ namespace Sui.ZKLogin
             }
         }
 
+        /// <summary>
+        /// Signs and executes a transaction block on the Sui blockchain using ZKLogin authentication.
+        /// Creates a ZK signature from the ephemeral account and ZKP data, then submits the transaction.
+        /// </summary>
+        /// <param name="transactionBlock">The transaction block to sign and execute.</param>
+        /// <returns>A task that returns the TransactionBlockResponse containing the execution results, or null if the operation fails.</returns>
         public static async Task<RpcResult<TransactionBlockResponse>> SignAndExecuteTransactionBlock(TransactionBlock transactionBlock)
         {
             string jsonData = JsonConvert.SerializeObject(_zkpResponse.data);
@@ -257,11 +333,6 @@ namespace Sui.ZKLogin
             RpcResult<TransactionBlockResponse> response = await _client.ExecuteTransactionBlockAsync(userTxBytes, new List<string>() { zkSignature }, opts);
 
             return response;
-        }
-
-        public static void Dispose()
-        {
-
         }
     }
 

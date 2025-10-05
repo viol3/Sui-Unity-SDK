@@ -27,5 +27,10 @@ public class GoogleOAuthWebGLJwtFetcher : MonoBehaviour, IJwtFetcher
         Debug.Log("jwt received");
         _jwt = token;
     }
+
+    public void Dispose()
+    {
+        Debug.Log("There is nothing to dispose");
+    }
    
 }

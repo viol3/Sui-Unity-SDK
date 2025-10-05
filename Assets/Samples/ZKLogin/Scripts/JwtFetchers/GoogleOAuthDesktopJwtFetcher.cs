@@ -1,22 +1,16 @@
 using Sui.ZKLogin.Utils;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
-using Unity.VisualScripting.Antlr3.Runtime;
 using UnityEngine;
-using UnityEngine.Networking;
-
 
 public class GoogleOAuthDesktopJwtFetcher : IJwtFetcher
 {
     private HttpListener _httpListener;
     private string _clientId;
     private string _redirectUri;
+
     public GoogleOAuthDesktopJwtFetcher(string clientId, string redirectUri)
     {
         _clientId = clientId;
@@ -73,6 +67,7 @@ public class GoogleOAuthDesktopJwtFetcher : IJwtFetcher
     </head>
     <body>
     <h1>Processing login...</h1>
+    <h2>Please wait while processing zkLogin...</h2>
     <script>
         // Extract token from fragment (after #)
         var fragment = window.location.hash.substring(1);
@@ -99,6 +94,7 @@ public class GoogleOAuthDesktopJwtFetcher : IJwtFetcher
     </head>
     <body>
     <h1>You are done!</h1>
+    <h2>You can close this page and return to the game.</h2>
     </body>
     </html>";
             SendResponse(response, requestHtml);
