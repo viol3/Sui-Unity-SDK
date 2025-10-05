@@ -489,8 +489,8 @@ DO NOT use PlayerPrefs rawly in production! Instead:
 
 WebGL:
 
-- We don't recommend store credentials locally with rawData.
-- Use some encryption solutions.
+- We don't recommend store credentials locally with rawData
+- Use some encryption solutions
 - Use session-only authentication
 - Implement proper server-side session management
 

@@ -6,7 +6,7 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Samples/ZKLogin/Scenes/ZkLoginSample.unity
+    path: Assets/Samples/Enoki-ZKLogin/Scenes/ZkLoginSample.unity
     guid: 0a6fcde45fc73fe41a0443b33cdfe0ab
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0
