@@ -5,13 +5,13 @@ using Sui.Rpc;
 using Sui.Rpc.Client;
 using Sui.Rpc.Models;
 using Sui.Transactions;
-using Sui.ZKLogin.Utils;
+using Sui.ZKLogin.Enoki.Utils;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Sui.ZKLogin
+namespace Sui.ZKLogin.Enoki
 {
     /// <summary>
     /// Sample implementation demonstrating how to use the EnokiZKLogin system for authentication
@@ -59,10 +59,7 @@ namespace Sui.ZKLogin
         // Together, these allow full transaction signing capability!
         // PlayerPrefs is NOT secure - data is stored unencrypted and persists indefinitely
         // This is for development purposes only - use secure storage in production!
-        private const string ZKP_PREF = "ZKP";
-        private const string ZKLOGINUSER_PREF = "ZKLOGINUSER";
-        private const string EPHEMERAL_PRIVATEKEY = "EPHEMERAL_PRIVATEKEY";
-        private const string MAX_EPOCH = "MAX_EPOCH";
+        private const string LOGIN_PREF = "ZK_LOGIN_DATA";
 
         /// <summary>
         /// Initializes the ZKLogin system and attempts to restore a previous session if available.
@@ -84,16 +81,17 @@ namespace Sui.ZKLogin
 #else
             EnokiZKLogin.LoadJwtFetcher(new GoogleOAuthDesktopJwtFetcher(_googleClientId, _redirectUri));
 #endif
-            if (PlayerPrefs.HasKey(ZKP_PREF))
+            if (PlayerPrefs.HasKey(LOGIN_PREF))
             {
-                EnokiZKPResponse zkpResponse = JsonConvert.DeserializeObject<EnokiZKPResponse>(PlayerPrefs.GetString(ZKP_PREF));
-                EnokiZKLoginUser zkLoginUser = JsonConvert.DeserializeObject<EnokiZKLoginUser>(PlayerPrefs.GetString(ZKLOGINUSER_PREF));
-                _ephemeralAccount = new Account(PlayerPrefs.GetString(EPHEMERAL_PRIVATEKEY));
+                EnokiZKLoginSaveableData data = JsonConvert.DeserializeObject<EnokiZKLoginSaveableData>(PlayerPrefs.GetString(LOGIN_PREF));
+                EnokiZKPResponse zkpResponse = data.zkpResponse;
+                EnokiZKLoginUserResponse zkLoginUser = data.loginUserResponse;
+                _ephemeralAccount = new Account(data.ephemeralPrivateKeyHex);
 
                 EnokiZKLogin.LoadZKPResponse(zkpResponse);
                 EnokiZKLogin.LoadZKLoginUser(zkLoginUser);
                 EnokiZKLogin.LoadEphemeralKey(_ephemeralAccount);
-                EnokiZKLogin.LoadMaxEpoch(PlayerPrefs.GetInt(MAX_EPOCH));
+                EnokiZKLogin.LoadMaxEpoch(data.maxEpoch);
 
                 // Validate that the saved session hasn't expired (check max epoch)
                 // If expired, this will automatically log out the user
@@ -124,10 +122,7 @@ namespace Sui.ZKLogin
                 EnokiZKPResponse zkpResponse = await EnokiZKLogin.Login();
                 if (_saveZKPOnDevice)
                 {
-                    PlayerPrefs.SetString(ZKP_PREF, JsonConvert.SerializeObject(zkpResponse));
-                    PlayerPrefs.SetString(ZKLOGINUSER_PREF, JsonConvert.SerializeObject(EnokiZKLogin.GetZKLoginUser()));
-                    PlayerPrefs.SetString(EPHEMERAL_PRIVATEKEY, EnokiZKLogin.GetEphemeralAccount().PrivateKey.ToHex());
-                    PlayerPrefs.SetInt(MAX_EPOCH, EnokiZKLogin.GetMaxEpoch());
+                    PlayerPrefs.SetString(LOGIN_PREF, JsonConvert.SerializeObject(EnokiZKLogin.GetSaveableData()));
                 }
             }
             

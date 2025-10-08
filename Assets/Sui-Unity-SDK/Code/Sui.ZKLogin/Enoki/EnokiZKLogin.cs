@@ -8,14 +8,14 @@ using Sui.Rpc.Client;
 using Sui.Rpc.Models;
 using Sui.Transactions;
 using Sui.Utilities;
+using Sui.ZKLogin.Enoki.Utils;
 using Sui.ZKLogin.Utils;
-using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Sui.ZKLogin
+namespace Sui.ZKLogin.Enoki
 {
     /// <summary>
     /// Manages ZK Login authentication and integration with the Sui blockchain network.
@@ -28,7 +28,7 @@ namespace Sui.ZKLogin
 
         private static SuiClient _client;
         private static Account _ephemeralAccount;
-        private static EnokiZKLoginUser _zkLoginUser;
+        private static EnokiZKLoginUserResponse _zkLoginUser;
         private static EnokiZKPResponse _zkpResponse;
         private static int _maxEpoch;
 
@@ -144,7 +144,7 @@ namespace Sui.ZKLogin
         /// Gets the current ZKLogin user data.
         /// </summary>
         /// <returns>The EnokiZKLoginUser object containing user information.</returns>
-        public static EnokiZKLoginUser GetZKLoginUser()
+        public static EnokiZKLoginUserResponse GetZKLoginUser()
         {
             return _zkLoginUser;
         }
@@ -177,6 +177,20 @@ namespace Sui.ZKLogin
         }
 
         /// <summary>
+        /// Gets a saveable data that can be used to save user information to auto-login after restart game.
+        /// </summary>
+        /// <returns>The EnokiZKLoginSaveableData object containing login information.</returns>
+        public static EnokiZKLoginSaveableData GetSaveableData()
+        {
+            EnokiZKLoginSaveableData result = new EnokiZKLoginSaveableData();
+            result.loginUserResponse = _zkLoginUser;
+            result.zkpResponse = _zkpResponse;
+            result.ephemeralPrivateKeyHex = _ephemeralAccount.PrivateKey.ToHex();
+            result.maxEpoch = _maxEpoch;
+            return result;
+        }
+
+        /// <summary>
         /// Loads a previously obtained ZKP response into the manager.
         /// </summary>
         /// <param name="zkpResponse">The ZKP response to load.</param>
@@ -189,7 +203,7 @@ namespace Sui.ZKLogin
         /// Loads previously obtained ZKLogin user data into the manager.
         /// </summary>
         /// <param name="zkLoginUser">The ZKLogin user data to load.</param>
-        public static void LoadZKLoginUser(EnokiZKLoginUser zkLoginUser)
+        public static void LoadZKLoginUser(EnokiZKLoginUserResponse zkLoginUser)
         {
             _zkLoginUser = zkLoginUser;
         }
@@ -252,7 +266,7 @@ namespace Sui.ZKLogin
                 {
                     return null;
                 }
-                _zkLoginUser = await EnokiZkLoginUtils.FetchZKLoginData(jwtToken, _enokiPublicKey);
+                _zkLoginUser = await EnokiZkLoginUtils.FetchZKLoginUserData(jwtToken, _enokiPublicKey);
                 if (_zkLoginUser == null)
                 {
                     return null;

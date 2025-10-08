@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Sui.ZKLogin.Utils
+namespace Sui.ZKLogin.Enoki.Utils
 {
     public static class EnokiZkLoginUtils
     {
@@ -80,7 +80,7 @@ namespace Sui.ZKLogin.Utils
             }
         }
 
-        public static async Task<EnokiZKLoginUser> FetchZKLoginData(string jwt, string apiToken)
+        public static async Task<EnokiZKLoginUserResponse> FetchZKLoginUserData(string jwt, string apiToken)
         {
             string url = "https://api.enoki.mystenlabs.com/v1/zklogin";
             using (UnityWebRequest request = new UnityWebRequest(url, "GET"))
@@ -96,11 +96,20 @@ namespace Sui.ZKLogin.Utils
                 {
                     Debug.LogError("Error while fetching zkLoginUser: " + request.downloadHandler.text);
                 }
-                return JsonConvert.DeserializeObject<EnokiZKLoginUser>(request.downloadHandler.text);
+                return JsonConvert.DeserializeObject<EnokiZKLoginUserResponse>(request.downloadHandler.text);
             }
         }
 
 
+    }
+
+    [System.Serializable]
+    public class EnokiZKLoginSaveableData
+    {
+        public EnokiZKLoginUserResponse loginUserResponse;
+        public EnokiZKPResponse zkpResponse;
+        public string ephemeralPrivateKeyHex;
+        public int maxEpoch;
     }
 
     [System.Serializable]
@@ -121,7 +130,7 @@ namespace Sui.ZKLogin.Utils
     }
 
     [System.Serializable]
-    public class EnokiNonceData
+    public class EnokiNonceResponseData
     {
         public string nonce { get; set; }
         public string randomness { get; set; }
@@ -133,11 +142,11 @@ namespace Sui.ZKLogin.Utils
     [System.Serializable]
     public class EnokiNonceResponse
     {
-        public EnokiNonceData data { get; set; }
+        public EnokiNonceResponseData data { get; set; }
     }
 
     [System.Serializable]
-    public class EnokiZKLoginData
+    public class EnokiZKLoginResponseData
     {
         public string salt { get; set; }
         public string address { get; set; }
@@ -145,19 +154,19 @@ namespace Sui.ZKLogin.Utils
     }
 
     [System.Serializable]
-    public class EnokiZKLoginUser
+    public class EnokiZKLoginUserResponse
     {
-        public EnokiZKLoginData data { get; set; }
+        public EnokiZKLoginResponseData data { get; set; }
     }
 
     [System.Serializable]
     public class EnokiZKPResponse
     {
-        public EnokiZKPData data { get; set; }
+        public EnokiZKPResponseData data { get; set; }
     }
 
     [System.Serializable]
-    public class EnokiZKPData
+    public class EnokiZKPResponseData
     {
         public ProofPoints proofPoints { get; set; }
         public IssBase64Details issBase64Details { get; set; }
