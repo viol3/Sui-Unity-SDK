@@ -1,10 +1,11 @@
 namespace OpenDive.Utils.Jwt
 {
+    using Newtonsoft.Json;
     using System;
+    using System.Collections.Generic;
     using System.Text;
     using UnityEngine;
-    using Newtonsoft.Json;
-    using System.Collections.Generic;
+    using UnityEngine.Scripting;
 
     /// <summary>
     /// A class to decode JWT tokens.
@@ -155,6 +156,7 @@ namespace OpenDive.Utils.Jwt
     /// <summary>
     /// Represents a decoded JWT with header, payload, and signature.
     /// </summary>
+    [Preserve]
     public class JWT
     {
         [JsonConstructor]
@@ -205,6 +207,7 @@ namespace OpenDive.Utils.Jwt
     /// <summary>
     /// Represents the JWT header.
     /// </summary>
+    [Preserve]
     public class JWTHeader
     {
         [JsonConstructor]
@@ -223,6 +226,7 @@ namespace OpenDive.Utils.Jwt
     /// <summary>
     /// Represents the JWT payload with common claims.
     /// </summary>
+    [Preserve]
     public class JWTPayload
     {
         [JsonConstructor]
