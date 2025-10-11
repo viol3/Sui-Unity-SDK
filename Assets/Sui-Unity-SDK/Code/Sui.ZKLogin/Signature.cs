@@ -119,7 +119,7 @@ namespace Sui.ZKLogin
         public ZkLoginSignatureInputsClaim IssBase64Details { get; set; }
 
         [JsonProperty("headerBase64")]
-        public BigInteger HeaderBase64 { get; set; }
+        public string HeaderBase64 { get; set; }
 
         [JsonProperty("addressSeed")]
         public string AddressSeed { get; set; }
@@ -128,7 +128,7 @@ namespace Sui.ZKLogin
         {
             serializer.Serialize(ProofPoints);
             serializer.Serialize(IssBase64Details);
-            serializer.Serialize(HeaderBase64);
+            serializer.SerializeString(HeaderBase64);
             serializer.SerializeString(AddressSeed);
         }
     }
@@ -137,19 +137,41 @@ namespace Sui.ZKLogin
     public class ProofPoints : ISerializable
     {
         [JsonProperty("a")]
-        public Sequence A { get; set; } // a: bcs.vector(bcs.string())
+        public List<string> a { get; set; }
 
         [JsonProperty("b")]
-        public Sequence B { get; set; } // b: bcs.vector(bcs.vector(bcs.string())),
+        public List<List<string>> b { get; set; } // b: bcs.vector(bcs.vector(bcs.string())),
 
         [JsonProperty("c")]
-        public Sequence C { get; set; } // c: bcs.vector(bcs.string()),
+        public List<string> c { get; set; } // c: bcs.vector(bcs.string()),
 
         public void Serialize(Serialization serializer)
         {
-            serializer.Serialize(A);
-            serializer.Serialize(B);
-            serializer.Serialize(C);  
+            serializer.SerializeU32AsUleb128((uint)a.Count);
+            foreach (var item in a)
+            {
+                serializer.SerializeString(item);
+            }
+
+
+            // --- B ---
+            serializer.SerializeU32AsUleb128((uint)b.Count);
+            foreach (var innerList in b)
+            {
+                serializer.SerializeU32AsUleb128((uint)innerList.Count);
+                foreach (var item in innerList)
+                {
+                    serializer.SerializeString(item);
+                }
+
+            }
+
+            // --- C ---
+            serializer.SerializeU32AsUleb128((uint)c.Count);
+            foreach (var item in c)
+            {
+                serializer.SerializeString(item);
+            }
         }
     }
 
