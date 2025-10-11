@@ -157,6 +157,7 @@ namespace OpenDive.Utils.Jwt
     /// </summary>
     public class JWT
     {
+        [JsonConstructor]
         public JWT() { }
         /// <summary>
         /// The JOSE (JSON Object Signing and Encryption) Header is comprised
@@ -206,6 +207,7 @@ namespace OpenDive.Utils.Jwt
     /// </summary>
     public class JWTHeader
     {
+        [JsonConstructor]
         public JWTHeader() { }
         public string alg { get; set; } // * Algorithm. Required for ZK Login.
         public string typ { get; set; } // * Token type. Required for ZK Login.
@@ -217,6 +219,7 @@ namespace OpenDive.Utils.Jwt
     /// </summary>
     public class JWTPayload
     {
+        [JsonConstructor]
         public JWTPayload() { }
         // <> Registered claims </>
         public string Iss { get; set; } // * Issuer of the JWT. Required for ZK Login.
