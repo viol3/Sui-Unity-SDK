@@ -12,6 +12,7 @@ using Sui.ZKLogin.Enoki.Utils;
 using Sui.ZKLogin.Utils;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -240,7 +241,7 @@ namespace Sui.ZKLogin.Enoki
         /// and Zero-Knowledge Proof generation.
         /// </summary>
         /// <returns>A task that returns the EnokiZKPResponse upon successful login, or null if login fails.</returns>
-        public static async Task<EnokiZKPResponse> Login()
+        public static async Task<EnokiZKPResponse> Login(CancellationToken cancellationToken = default)
         {
             if (!_inited)
             {
@@ -249,7 +250,7 @@ namespace Sui.ZKLogin.Enoki
             }
             if (_zkpResponse == null)
             {
-                EnokiNonceResponse nr = await EnokiZkLoginUtils.FetchNonce(_enokiPublicKey, _network, _ephemeralAccount.PublicKey.ToSuiPublicKey(), 2);
+                EnokiNonceResponse nr = await EnokiZkLoginUtils.FetchNonce(_enokiPublicKey, _network, _ephemeralAccount.PublicKey.ToSuiPublicKey(), 2, cancellationToken);
                 if (nr == null)
                 {
                     return null;
@@ -260,18 +261,19 @@ namespace Sui.ZKLogin.Enoki
                     Debug.LogWarning("JwtFetcher is not assigned. You need to create a JwtFetcher and assign it via LoadJwtFetcher().");
                     return null;
                 }
+                _jwtFetcher.SetCancellationToken(cancellationToken);
                 string jwtToken = await _jwtFetcher.FetchJwt(nr.data.nonce);
                 JWT jwt = JWTDecoder.DecodeJWT(jwtToken);
                 if (jwt == null)
                 {
                     return null;
                 }
-                _zkLoginUser = await EnokiZkLoginUtils.FetchZKLoginUserData(jwtToken, _enokiPublicKey);
+                _zkLoginUser = await EnokiZkLoginUtils.FetchZKLoginUserData(jwtToken, _enokiPublicKey, cancellationToken);
                 if (_zkLoginUser == null)
                 {
                     return null;
                 }
-                _zkpResponse = await EnokiZkLoginUtils.FetchZKP(_network, _ephemeralAccount.PublicKey.ToSuiPublicKey(), jwtToken, _enokiPublicKey, nr.data.maxEpoch, nr.data.randomness);
+                _zkpResponse = await EnokiZkLoginUtils.FetchZKP(_network, _ephemeralAccount.PublicKey.ToSuiPublicKey(), jwtToken, _enokiPublicKey, nr.data.maxEpoch, nr.data.randomness, cancellationToken);
             }
             return _zkpResponse;
         }

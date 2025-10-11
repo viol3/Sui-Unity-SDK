@@ -2,11 +2,13 @@ using Sui.ZKLogin.Utils;
 using System;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
 public class GoogleOAuthDesktopJwtFetcher : IJwtFetcher
 {
+    private CancellationToken _cancellationToken;
     private HttpListener _httpListener;
     private string _clientId;
     private string _redirectUri;
@@ -53,8 +55,21 @@ public class GoogleOAuthDesktopJwtFetcher : IJwtFetcher
             _httpListener.Start();
             Debug.Log($"Local server started: {redirectUri}");
 
+            var getContextTask = _httpListener.GetContextAsync();
+
+            while (!getContextTask.IsCompleted)
+            {
+                await Task.Yield();
+                if (_cancellationToken != null &&_cancellationToken.IsCancellationRequested)
+                {
+                    _httpListener.Stop();
+                    Debug.Log("Fetch JWT => Login canceled!");
+                    return null;
+                }
+            }
+
             // Wait for callback
-            HttpListenerContext context = await _httpListener.GetContextAsync();
+            HttpListenerContext context = getContextTask.Result;
             HttpListenerRequest request = context.Request;
             HttpListenerResponse response = context.Response;
 
@@ -99,9 +114,20 @@ public class GoogleOAuthDesktopJwtFetcher : IJwtFetcher
     </html>";
             SendResponse(response, requestHtml);
 
-            context = await _httpListener.GetContextAsync();
-            request = context.Request;
-            response = context.Response;
+            getContextTask = _httpListener.GetContextAsync();
+
+            while (!getContextTask.IsCompleted)
+            {
+                await Task.Yield();
+                if (_cancellationToken != null && _cancellationToken.IsCancellationRequested)
+                {
+                    _httpListener.Stop();
+                    Debug.Log("Fetch JWT => Login canceled!");
+                    return null;
+                }
+            }
+            request = getContextTask.Result.Request;
+            response = getContextTask.Result.Response;
             SendResponse(response, responseHtml);
             // Parse URL parameters
             string token = request.QueryString.Get("id_token");
@@ -139,6 +165,11 @@ public class GoogleOAuthDesktopJwtFetcher : IJwtFetcher
             _httpListener.Stop();
             Debug.Log("HttpListener Disposed");
         }
+    }
+
+    public void SetCancellationToken(CancellationToken cancellationToken)
+    {
+        _cancellationToken = cancellationToken;
     }
 
     // JSON response models

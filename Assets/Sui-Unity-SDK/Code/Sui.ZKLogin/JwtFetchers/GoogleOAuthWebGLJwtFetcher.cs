@@ -1,11 +1,13 @@
 using Sui.ZKLogin.Utils;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
 
 public class GoogleOAuthWebGLJwtFetcher : MonoBehaviour, IJwtFetcher
 {
+    CancellationToken _cancellationToken;
     string _googleclientId;
     string _jwt = "";
     [DllImport("__Internal")]
@@ -24,6 +26,11 @@ public class GoogleOAuthWebGLJwtFetcher : MonoBehaviour, IJwtFetcher
         while(string.IsNullOrEmpty(_jwt))
         {
             await Task.Yield();
+            if(_cancellationToken != null && _cancellationToken.IsCancellationRequested)
+            {
+                Debug.Log("Fetch JWT => Request canceled by token.");
+                return null;
+            }
         }
         return _jwt;
     }
@@ -38,5 +45,9 @@ public class GoogleOAuthWebGLJwtFetcher : MonoBehaviour, IJwtFetcher
     {
         Debug.Log("There is nothing to dispose");
     }
-   
+
+    public void SetCancellationToken(CancellationToken cancellationToken)
+    {
+        _cancellationToken = cancellationToken;
+    }
 }

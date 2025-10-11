@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -9,7 +10,7 @@ namespace Sui.ZKLogin.Enoki.Utils
     public static class EnokiZkLoginUtils
     {
 
-        public static async Task<EnokiNonceResponse> FetchNonce(string enokiPublicKey, string network, string ephemeralPublicKey, int additionalEpochs)
+        public static async Task<EnokiNonceResponse> FetchNonce(string enokiPublicKey, string network, string ephemeralPublicKey, int additionalEpochs, CancellationToken cancellationToken = default)
         {
             string url = "https://api.enoki.mystenlabs.com/v1/zklogin/nonce";
             string jsonBody = JsonConvert.SerializeObject(new EnokiNonceRequest
@@ -29,7 +30,19 @@ namespace Sui.ZKLogin.Enoki.Utils
                 request.SetRequestHeader("Content-Type", "application/json");
                 request.SetRequestHeader("Authorization", "Bearer " + enokiPublicKey);
 
-                await request.SendWebRequest();
+                var operation = request.SendWebRequest();
+
+                while (!operation.isDone)
+                {
+                    if (cancellationToken != null && cancellationToken.IsCancellationRequested)
+                    {
+                        request.Abort();
+                        Debug.Log("EnokiNonceResponse => Request canceled by token.");
+                        return null;
+                    }
+
+                    await Task.Yield();
+                }
 
                 if (request.result == UnityWebRequest.Result.DataProcessingError || request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
                 {
@@ -44,7 +57,7 @@ namespace Sui.ZKLogin.Enoki.Utils
 
         }
 
-        public static async Task<EnokiZKPResponse> FetchZKP(string network, string ephemeralPublicKey, string jwt, string apiToken, int maxEpoch, string randomness)
+        public static async Task<EnokiZKPResponse> FetchZKP(string network, string ephemeralPublicKey, string jwt, string apiToken, int maxEpoch, string randomness, CancellationToken cancellationToken = default)
         {
             string url = "https://api.enoki.mystenlabs.com/v1/zklogin/zkp";
             string jsonBody = JsonConvert.SerializeObject(new EnokiZKPRequest
@@ -64,7 +77,20 @@ namespace Sui.ZKLogin.Enoki.Utils
                 request.SetRequestHeader("Authorization", "Bearer " + apiToken);
                 request.SetRequestHeader("zklogin-jwt", jwt);
 
-                await request.SendWebRequest();
+                var operation = request.SendWebRequest();
+                while (!operation.isDone)
+                {
+                    if (cancellationToken != null && cancellationToken.IsCancellationRequested)
+                    {
+                        request.Abort();
+                        Debug.Log("EnokiZKPResponse => Request canceled by token");
+                        return null;
+                    }
+
+                    await Task.Yield();
+                }
+
+
 
                 if (request.result == UnityWebRequest.Result.DataProcessingError || request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
                 {
@@ -80,7 +106,7 @@ namespace Sui.ZKLogin.Enoki.Utils
             }
         }
 
-        public static async Task<EnokiZKLoginUserResponse> FetchZKLoginUserData(string jwt, string apiToken)
+        public static async Task<EnokiZKLoginUserResponse> FetchZKLoginUserData(string jwt, string apiToken, CancellationToken cancellationToken = default)
         {
             string url = "https://api.enoki.mystenlabs.com/v1/zklogin";
             using (UnityWebRequest request = new UnityWebRequest(url, "GET"))
@@ -90,7 +116,19 @@ namespace Sui.ZKLogin.Enoki.Utils
                 request.SetRequestHeader("Authorization", "Bearer " + apiToken);
                 request.SetRequestHeader("zklogin-jwt", jwt);
 
-                await request.SendWebRequest();
+
+                var operation = request.SendWebRequest();
+                while (!operation.isDone)
+                {
+                    if (cancellationToken != null && cancellationToken.IsCancellationRequested)
+                    {
+                        request.Abort();
+                        Debug.Log("EnokiZKPResponse => Request canceled by token");
+                        return null;
+                    }
+
+                    await Task.Yield();
+                }
 
                 if (request.result == UnityWebRequest.Result.DataProcessingError || request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
                 {
