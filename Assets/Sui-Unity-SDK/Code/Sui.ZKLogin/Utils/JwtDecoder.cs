@@ -157,6 +157,7 @@ namespace OpenDive.Utils.Jwt
     /// </summary>
     public class JWT
     {
+        public JWT() { }
         /// <summary>
         /// The JOSE (JSON Object Signing and Encryption) Header is comprised
         /// of a set of Header Parameters that typically consist of a name/value pair:
@@ -205,6 +206,7 @@ namespace OpenDive.Utils.Jwt
     /// </summary>
     public class JWTHeader
     {
+        public JWTHeader() { }
         public string alg { get; set; } // * Algorithm. Required for ZK Login.
         public string typ { get; set; } // * Token type. Required for ZK Login.
         public string kid { get; set; } // * The kid value indicates what key was used to sign the JWT. Required for ZK Login.
@@ -215,6 +217,7 @@ namespace OpenDive.Utils.Jwt
     /// </summary>
     public class JWTPayload
     {
+        public JWTPayload() { }
         // <> Registered claims </>
         public string Iss { get; set; } // * Issuer of the JWT. Required for ZK Login.
         public string Sub { get; set; } // * Subject of the JWT (the user). Required for ZK Login.

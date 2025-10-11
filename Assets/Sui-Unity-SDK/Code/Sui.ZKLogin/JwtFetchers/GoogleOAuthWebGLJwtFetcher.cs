@@ -30,7 +30,7 @@ public class GoogleOAuthWebGLJwtFetcher : MonoBehaviour, IJwtFetcher
 
     public void OnJwtReceived(string token)
     {
-        Debug.Log("jwt received");
+        Debug.Log("jwt received => " + token);
         _jwt = token;
     }
 
