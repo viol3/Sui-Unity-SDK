@@ -335,7 +335,7 @@ namespace Sui.ZKLogin.Enoki
             }
 
             string zkSignature = ZkLoginSignature.GetZkLoginSignature(inputs, (ulong)_maxEpoch, CryptoBytes.FromBase64String(signature_result.Result));
-            Debug.Log("Zk Signature => " + zkSignature);
+            //Debug.Log("Zk Signature => " + zkSignature);
             TransactionBlockResponseOptions opts = new TransactionBlockResponseOptions
             {
                 ShowInput = false,
