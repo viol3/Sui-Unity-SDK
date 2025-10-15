@@ -81,6 +81,7 @@ namespace MCL.BLS12_381.Net
 #if UNITY_EDITOR || UNITY_STANDALONE
             // Unity ortamında, doğru plugin yolunu arama listesinin en başına ekliyoruz.
             yield return System.IO.Path.Combine(UnityEngine.Application.dataPath, "Plugins", "x86_64");
+            yield return System.IO.Path.Combine(UnityEngine.Application.dataPath, "Sui-Unity-SDK", "Plugins", "x86_64");
 #endif
 
             //yield return Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);

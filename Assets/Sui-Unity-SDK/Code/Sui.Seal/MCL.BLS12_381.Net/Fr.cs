@@ -40,7 +40,13 @@ namespace MCL.BLS12_381.Net
             {
                 fixed (Fr* ptr = &this)
                 {
+
+#if UNITY_EDITOR
                     MclBls12381.Imports.MclBnFrClear.Value(ptr);
+#elif UNITY_WEBGL
+                    MCL_Imports.Unity_mclBnFr_clear(ptr);
+#endif
+
                 }
             }
         }
@@ -51,7 +57,12 @@ namespace MCL.BLS12_381.Net
             {
                 fixed (Fr* ptr = &this)
                 {
+#if UNITY_EDITOR
                     MclBls12381.Imports.MclBnFrSetInt32.Value(ptr, x);
+#elif UNITY_WEBGL
+                    MCL_Imports.Unity_mclBnFr_setInt32(ptr, x);
+#endif
+
                 }
             }
         }

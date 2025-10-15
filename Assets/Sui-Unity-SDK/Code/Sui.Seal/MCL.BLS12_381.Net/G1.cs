@@ -35,6 +35,13 @@ namespace MCL.BLS12_381.Net
             return res;
         }
 
+        public static G1 HashToCurve(byte[] bytes)
+        {
+            var res = new G1();
+            res.SetHashOf(bytes);
+            return res;
+        }
+
         public void Clear()
         {
             unsafe
