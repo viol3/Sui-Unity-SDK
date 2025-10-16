@@ -1,42 +1,249 @@
-﻿using MCL.BLS12_381.Net; // Kütüphanenin C# sınıflarını kullanabilmek için
+﻿using Codice.CM.Client.Differences;
+using Codice.CM.Common.Serialization.Replication;
+using MCL.BLS12_381.Net; // Kütüphanenin C# sınıflarını kullanabilmek için
+using NBitcoin;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using OpenDive.BCS;
 using Sui.Accounts;
+using Sui.Cryptography;
 using Sui.Rpc;
 using Sui.Rpc.Client;
+using Sui.Rpc.Models;
 using Sui.Seal;
+using Sui.Transactions;
+using Sui.Types;
+using Sui.Utilities;
 using System;            // Exception ve BitConverter kullanmak için
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEditor.PackageManager;
 using UnityEngine;
+using UnityEngine.XR;
 
 public class BlsTest : MonoBehaviour
 {
     SuiClient _suiClient;
     Account _account;
+    string _objectIdToDecrypt = "0x85dc4f6ef5485e27750ce2651ac7f988aa8c09383b45508c4ca7e626269e4900";
     string _packageId = "0xf3dfe70b4916fecaecf7928bb8221031c28d5130c66e8fa7e645ce8785846f91";
+    string _moduleName = "private_data";
+    string _funcName = "store_entry";
     byte[] _policyId;
+    JsonSerializerSettings _jsonSettings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects };
     byte[] _nonceBytes = { 179, 187, 103, 40, 166, 131, 240, 66, 249, 74, 252, 248, 94, 86, 237, 156, 126, 166, 204, 121, 87, 83, 242, 54, 142, 192, 68, 94, 192, 49, 245, 27 };
     async void Start()
     {
         _suiClient = new SuiClient(Constants.TestnetConnection);
         _account = new Account("0x8358b8f5a0850969194d0cd0e6e70dad2ec27b981669a8caf9fc566a17c9c115");
         //byte[] nonce = Utils.GenerateNonce();
-        _policyId = Utils.CreatePolicyId(_account.SuiAddress().KeyHex, _nonceBytes);
-        RunAllTests();
+        _policyId = Sui.Seal.Utils.CreatePolicyId(_account.SuiAddress().KeyHex, _nonceBytes);
+        //RunAllTests();
+        //await DecryptTest();
+        TestBCSSerialization();
+    }
+
+    private void TestBCSSerialization()
+    {
+        Debug.Log("--------- C# SERİLEŞTİRME TESTİ ---------");
+
+        // 1. TypeScript'teki ile AYNI SABİT nesneyi oluşturuyoruz.
+        var testEncryptedObject = new EncryptedObject
+        {
+            version = 0,
+            packageId = new AccountAddress("0xf3dfe70b4916fecaecf7928bb8221031c28d5130c66e8fa7e645ce8785846f91"),
+            id = "0xdeffff",
+            services = new[] { (new AccountAddress("0x73d05d62c18d9374e3ea529e8e0ed6161da1a141a94d3f76ae3fe4e99356db75"), 1), (new AccountAddress("0xf5d14a81a982144ae441cd7d64b09027f116a468bd36e7eca494f750591623c8"), 2) },
+            threshold = 2,
+            encryptedShares = new IBEEncryptions
+            {
+                BonehFranklinBLS12381 = new BonehFranklinBLS12381
+                {
+                    nonce = new byte[] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+                    encryptedShares = new[] { new byte[] { 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 }, new byte[] { 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 } },
+                    encryptedRandomness = new byte[] { 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4 }
+                }
+            },
+            ciphertext = new Aes256GcmCiphertext
+            {
+                blob = new byte[] { 11, 12, 13, 14, 15, 16, 17 },
+                aad = new byte[] { 14, 15 }
+            }
+        };
+
+        // Her alan için ayrı bir serializer kullanarak logluyoruz
+        var s = new Serialization();
+        s.SerializeU8((byte)testEncryptedObject.version);
+        Debug.Log($"[C#] version (u8): {Sui.Seal.Utils.ToHex(s.GetBytes())}");
+
+        s = new Serialization();
+        s.Serialize(testEncryptedObject.packageId);
+        Debug.Log($"[C#] packageId (string): {Sui.Seal.Utils.ToHex(s.GetBytes())}");
+
+        s = new Serialization();
+        s.Serialize(testEncryptedObject.id);
+        Debug.Log($"[C#] id (string): {Sui.Seal.Utils.ToHex(s.GetBytes())}");
+
+        s = new Serialization();
+        s.SerializeU32AsUleb128((uint)testEncryptedObject.services.Length);
+        foreach (var service in testEncryptedObject.services)
+        {
+            s.Serialize(service.objectId);
+            s.SerializeU8((byte)service.index);
+        }
+        Debug.Log($"[C#] services (vector<(string, u8)>): {Sui.Seal.Utils.ToHex(s.GetBytes())}");
+
+        s = new Serialization();
+        s.SerializeU8((byte)testEncryptedObject.threshold);
+        Debug.Log($"[C#] threshold (u8): {Sui.Seal.Utils.ToHex(s.GetBytes())}");
+
+        s = new Serialization();
+        testEncryptedObject.encryptedShares.Serialize(s);
+        Debug.Log($"[C#] encryptedShares (enum): {Sui.Seal.Utils.ToHex(s.GetBytes())}");
+
+        s = new Serialization();
+        testEncryptedObject.ciphertext.Serialize(s);
+        Debug.Log($"[C#] ciphertext (enum): {Sui.Seal.Utils.ToHex(s.GetBytes())}");
+
+        // Son olarak, objenin tamamını serialize edelim
+        s = new Serialization();
+        testEncryptedObject.Serialize(s);
+        Debug.Log($"[C#] TAMAMI: {Sui.Seal.Utils.ToHex(s.GetBytes())}");
     }
 
     private async void RunAllTests()
     {
         Debug.Log("====== TÜM TESTLER BAŞLATILIYOR (PLATFORM: WINDOWS/EDITOR) ======");
-
-        TestUtils();
-        TestShamir();
-        await TestDemRoundtrip();
-        TestIbeAndKdf();
-        await TestSealClient();
+        
+        EncryptedObject encryptedObject = await TestSealClientEncrypt();
+        var serializer = new Serialization();
+        encryptedObject.Serialize(serializer);
+        byte[] encryptedBytes = serializer.GetBytes();
+        Debug.Log(encryptedBytes.Length);
+        //TransactionBlock tx_block = new TransactionBlock();
+        //tx_block.AddMoveCallTx
+        //(
+        //    SuiMoveNormalizedStructType.FromStr($"{_packageId}::{_moduleName}::{_funcName}"),
+        //    new SerializableTypeTag[] { },
+        //    new TransactionArgument[]
+        //    {
+        //        tx_block.AddPure(new OpenDive.BCS.Bytes(_nonceBytes)),
+        //        tx_block.AddPure(new OpenDive.BCS.Bytes(encryptedBytes))
+        //    }
+        //);
+        //await _suiClient.SignAndExecuteTransactionBlockAsync(tx_block, _account);
         Debug.Log("====== TÜM TESTLER TAMAMLANDI ======");
+    }
+
+    private async Task DecryptTest()
+    {
+        var serverConfigs = new List<KeyServerConfig>
+        {
+            new KeyServerConfig { objectId = "0x73d05d62c18d9374e3ea529e8e0ed6161da1a141a94d3f76ae3fe4e99356db75", weight = 1 },
+            new KeyServerConfig { objectId = "0xf5d14a81a982144ae441cd7d64b09027f116a468bd36e7eca494f750591623c8", weight = 1 },
+        };
+        var options = new SealClientOptions { ServerConfigs = serverConfigs, SuiClient = _suiClient };
+
+        // 2. SealClient'ı başlat
+        var client = new SealClient(options);
+        Debug.Log("SealClient başarıyla oluşturuldu.");
+        await client.InitializeAsync();
+        var sessionKey = await SessionKey.Create(_account.SuiAddress().ToHex(), _packageId, 10);
+
+        // --- YENİ EKLENEN SATIRLAR ---
+        Debug.Log("--------- C# DEBUG BAŞLANGIÇ ---------");
+        // Mesajın metin halini logla
+        Debug.Log($"C# İmzalanacak Metin: {Encoding.UTF8.GetString(sessionKey.GetPersonalMessage())}");
+        // Mesajın byte dizisi halini logla
+        Debug.Log($"C# İmzalanacak Byte'lar: [{string.Join(", ", sessionKey.GetPersonalMessage())}]");
+        Debug.Log("--------- C# DEBUG BİTİŞ ---------");
+
+        SignatureWithBytes signatureWithBytes = _account.SignPersonalMessage(sessionKey.GetPersonalMessage());
+        sessionKey.SetPersonalMessageSignature(signatureWithBytes.Signature);
+
+        const string sabitMesaj = "Accessing keys of package 0xabc for 10 mins from 2025-10-16 12:00:00 UTC, session key FAKEKEY";
+        var personalMessage = Encoding.UTF8.GetBytes(sabitMesaj);
+        SignatureWithBytes signatureWithBytes2 = _account.SignPersonalMessage(personalMessage);
+        
+        Debug.Log("Signature => " + signatureWithBytes2.Signature);
+        var response = await _suiClient.GetObjectAsync(new AccountAddress(_objectIdToDecrypt), new ObjectDataOptions() { ShowContent = true});
+        var moveObject = (ParsedMoveObject)response.Result.Data.Content.ParsedData;
+        // NOT: 'fields' içindeki 'url' ve 'pk' alan adlarının, Move objesindeki
+        // alan adlarıyla eşleştiğinden emin olun.
+        var fields = moveObject.Fields;
+        // ... (encryptedObjectBytes'ı Move objesinin field'ından çekme) ...
+        var encryptedBytes = (moveObject.Fields["data"] as JArray).Select(jv => (byte)jv).ToArray(); ; // Bu, EncryptedObject'in serialize edilmiş hali
+
+        // === 3. TRANSACTION OLUŞTURMA ===
+        // decrypt.ts örneğindeki gibi, şifre çözmek için de bir transaction gerekir.
+        var tx_block = new TransactionBlock();
+
+        tx_block.AddMoveCallTx
+        (
+            SuiMoveNormalizedStructType.FromStr($"{_packageId}::{_moduleName}::seal_approve"),
+            new SerializableTypeTag[] { },
+            new TransactionArgument[]
+            {
+                tx_block.AddPure(new OpenDive.BCS.Bytes(_policyId)),
+                tx_block.AddObjectInput(_objectIdToDecrypt)
+            }
+        );
+        //tx_block.SetSender(_account);
+        var txBytes = await tx_block.Build(new BuildOptions(_suiClient, null, true, null));
+        var txBytesForServer = txBytes.Skip(1).ToArray();
+        Debug.Log("--------- C# DEBUG BAŞLANGIÇ ---------");
+        Debug.Log($"C# txBytes UZUNLUK: {txBytesForServer.Length}");
+        Debug.Log($"C# txBytes (HEX): {Sui.Seal.Utils.ToHex(txBytesForServer)}");
+        Debug.Log("--------- C# DEBUG BİTİŞ ---------");
+
+        var decryptOptions = new DecryptOptions
+        {
+            Data = encryptedBytes,
+            SessionKey = sessionKey,
+            TxBytes = txBytesForServer
+            //TxBytes = txBytes
+        };
+        byte[] decryptedMessageBytes = await client.Decrypt(decryptOptions);
+        string decryptedMessage = Encoding.UTF8.GetString(decryptedMessageBytes);
+        Debug.Log("Veri başarıyla çözüldü.");
+        Debug.Log(decryptedMessage);
+        Debug.Log("<color=green>SealClient Entegrasyon Testi: BAŞARILI</color>");
+    }
+
+    private async Task<EncryptedObject> TestSealClientEncrypt()
+    {
+        // 1. Test için konfigürasyon oluştur
+        var serverConfigs = new List<KeyServerConfig>
+            {
+                new KeyServerConfig { objectId = "0x73d05d62c18d9374e3ea529e8e0ed6161da1a141a94d3f76ae3fe4e99356db75", weight = 1 },
+                new KeyServerConfig { objectId = "0xf5d14a81a982144ae441cd7d64b09027f116a468bd36e7eca494f750591623c8", weight = 1 },
+            };
+        var options = new SealClientOptions { ServerConfigs = serverConfigs, SuiClient = _suiClient };
+
+        // 2. SealClient'ı başlat
+        var client = new SealClient(options);
+        Debug.Log("SealClient başarıyla oluşturuldu.");
+        await client.InitializeAsync();
+
+        //var sessionKey = await SessionKey.Create(_account.SuiAddress().ToHex(), _packageId, 10);
+
+        // 3. Şifrelenecek veriyi hazırla
+        string originalMessage = "myspecialmessage";
+        int threshold = 2;
+        var encryptOptions = new EncryptOptions
+        {
+            Threshold = threshold,
+            PackageId = new AccountAddress(_packageId), // Hex string
+            Id = Sui.Seal.Utils.ToHex(_policyId),         // Hex string
+            Data = Encoding.UTF8.GetBytes(originalMessage)
+        };
+
+        // 4. Şifreleme (seal) işlemini AWAIT ile gerçekleştir
+        var (key, encryptedData) = await client.Encrypt(encryptOptions);
+        return encryptedData;
     }
 
     private async Task TestSealClient()
@@ -65,8 +272,8 @@ public class BlsTest : MonoBehaviour
             var encryptOptions = new EncryptOptions
             {
                 Threshold = threshold,
-                PackageId = _packageId, // Hex string
-                Id = Utils.ToHex(_policyId),         // Hex string
+                PackageId = new AccountAddress(_packageId), // Hex string
+                Id = Sui.Seal.Utils.ToHex(_policyId),         // Hex string
                 Data = Encoding.UTF8.GetBytes(originalMessage)
             };
 
@@ -78,13 +285,16 @@ public class BlsTest : MonoBehaviour
                 throw new Exception("Encrypt metodu beklenen çıktıyı vermedi.");
             }
             Debug.Log("SealClient.Encrypt başarıyla çalıştı.");
-            Debug.Log($"Oluşturulan Simetrik Anahtar (Hex): {Utils.ToHex(key)}");
-            Debug.Log($"Şifrelenmiş Nonce (Hex): {Utils.ToHex(encryptedData.encryptedShares.BonehFranklinBLS12381.nonce)}");
+            Debug.Log($"Oluşturulan Simetrik Anahtar (Hex): {Sui.Seal.Utils.ToHex(key)}");
+            Debug.Log($"Şifrelenmiş Nonce (Hex): {Sui.Seal.Utils.ToHex(encryptedData.encryptedShares.BonehFranklinBLS12381.nonce)}");
 
             Debug.Log("Şifreyi çözmek için sunuculardan parça anahtarlar alınıyor (simülasyon)...");
+            string serializedEncryptedObject = JsonConvert.SerializeObject(encryptedData);
+            byte[] encryptedBytes = Encoding.UTF8.GetBytes(serializedEncryptedObject);
+
             var decryptOptions = new DecryptOptions
             {
-                EncryptedObject = encryptedData,
+                Data = encryptedBytes,
                 SessionKey = sessionKey,
                 TxBytes = new byte[] { 1, 2, 3 } // Test için sahte işlem verisi
             };
@@ -115,21 +325,21 @@ public class BlsTest : MonoBehaviour
         {
             // FromHex ve ToHex testi
             string hex = "deadbeef";
-            byte[] bytes = Utils.FromHex(hex);
-            if (Utils.ToHex(bytes) != hex) throw new Exception("FromHex/ToHex başarısız.");
+            byte[] bytes = Sui.Seal.Utils.FromHex(hex);
+            if (Sui.Seal.Utils.ToHex(bytes) != hex) throw new Exception("FromHex/ToHex başarısız.");
             Debug.Log("<color=green>Utils.FromHex/ToHex: BAŞARILI</color>");
 
             // Xor testi
             byte[] a = { 1, 2, 3 };
             byte[] b = { 4, 5, 6 };
             byte[] expectedXor = { 5, 7, 5 }; // 1^4=5, 2^5=7, 3^6=5
-            if (!Utils.AreEqual(Utils.Xor(a, b), expectedXor)) throw new Exception("Utils.Xor başarısız.");
+            if (!Sui.Seal.Utils.AreEqual(Sui.Seal.Utils.Xor(a, b), expectedXor)) throw new Exception("Utils.Xor başarısız.");
             Debug.Log("<color=green>Utils.Xor: BAŞARILI</color>");
 
             // Flatten testi
             byte[] c = { 7, 8 };
             byte[] expectedFlatten = { 1, 2, 3, 7, 8 };
-            if (!Utils.AreEqual(Utils.Flatten(a, c), expectedFlatten)) throw new Exception("Utils.Flatten başarısız.");
+            if (!Sui.Seal.Utils.AreEqual(Sui.Seal.Utils.Flatten(a, c), expectedFlatten)) throw new Exception("Utils.Flatten başarısız.");
             Debug.Log("<color=green>Utils.Flatten: BAŞARILI</color>");
         }
         catch (Exception e)
@@ -158,7 +368,7 @@ public class BlsTest : MonoBehaviour
             Debug.Log("Shamir.Combine: 3 parça birleştirildi.");
 
             // 3. Sonucu kontrol et
-            if (!Utils.AreEqual(secret, combinedSecret))
+            if (!Sui.Seal.Utils.AreEqual(secret, combinedSecret))
             {
                 throw new Exception("Birleştirilen sır, orijinal sır ile eşleşmiyor!");
             }
@@ -168,57 +378,6 @@ public class BlsTest : MonoBehaviour
         catch (Exception e)
         {
             Debug.LogError("<color=red>--- Shamir Testi BAŞARISIZ ---</color>");
-            Debug.LogException(e);
-        }
-    }
-
-    private void TestIbeAndKdf()
-    {
-        Debug.Log("--- IBE ve KDF Entegrasyon Testi Başlatılıyor ---");
-        try
-        {
-            // Test için sahte veriler oluştur
-            int numServers = 5;
-            int threshold = 3;
-
-            var sk = Fr.GetRandom();
-            // 2. Jeneratör noktasını (G) alıp bu gizli anahtarla çarpıyoruz. pk = sk * G
-            var pk = G2.Generator * sk;
-            // Sahte Sunucu Public Key'leri (G2)
-            var publicKeys = Enumerable.Range(0, numServers).Select(_ => pk).ToArray();
-            var objectIds = Enumerable.Range(0, numServers).Select(i => $"0x{i:x64}").ToArray();
-
-            // Şifrelenecek kimlik ve sır
-            byte[] id = Encoding.UTF8.GetBytes("test@example.com");
-            byte[] masterSecret = new byte[32];
-
-
-            // 1. Kriptografik olarak güvenli bir rastgele sayı üreteci nesnesi oluşturuyoruz.
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                // 2. Bu nesnenin 'GetBytes' metodunu kullanarak dizimizi dolduruyoruz.
-                rng.GetBytes(masterSecret);
-            }
-            byte[] baseKey = Encoding.UTF8.GetBytes("some-base-key");
-
-            // Sırrı Shamir ile paylaştır
-            var shares = Shamir.Split(masterSecret, threshold, numServers);
-
-            Debug.Log("Ibe.EncryptBatched çağrılıyor...");
-            // Ana IBE şifreleme fonksiyonunu çalıştır
-            var encryptions = Ibe.BonehFranklin.EncryptBatched(publicKeys, id, shares, baseKey, threshold, objectIds);
-
-            // Eğer buraya kadar hata almadan geldiysek, fonksiyonlar çalışıyor demektir.
-            if (encryptions?.BonehFranklinBLS12381?.encryptedShares.Length != numServers)
-            {
-                throw new Exception("EncryptBatched beklenen sayıda şifreli pay üretmedi.");
-            }
-
-            Debug.Log("<color=green>Ibe.EncryptBatched (KDF dahil): BAŞARILI</color>");
-        }
-        catch (Exception e)
-        {
-            Debug.LogError("<color=red>--- IBE ve KDF Testi BAŞARISIZ ---</color>");
             Debug.LogException(e);
         }
     }

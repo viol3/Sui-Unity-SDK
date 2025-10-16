@@ -46,6 +46,31 @@ namespace Sui.Seal
             return result;
         }
 
+        public static byte[] AddressToBytes32(string address)
+        {
+            // "0x" ön ekini kaldır
+            string hex = address.StartsWith("0x") ? address.Substring(2) : address;
+
+            // Eksik karakter varsa başına '0' ekleyerek çift sayıya tamamla (örn: "abc" -> "0abc")
+            if (hex.Length % 2 != 0)
+            {
+                hex = "0" + hex;
+            }
+
+            byte[] addressBytes = FromHex(hex); // Zaten var olan FromHex metodumuzu kullanıyoruz
+
+            if (addressBytes.Length > 32)
+            {
+                throw new ArgumentException("Address is longer than 32 bytes.");
+            }
+
+            // 32 byte'lık bir dizi oluştur ve başını sıfırlarla doldur (padding)
+            var result = new byte[32];
+            // Kaynak diziyi, hedef dizinin sonuna kopyala
+            Buffer.BlockCopy(addressBytes, 0, result, 32 - addressBytes.Length, addressBytes.Length);
+            return result;
+        }
+
         // Bu, TypeScript'teki '@mysten/bcs' kütüphanesinden gelen 'fromHex' fonksiyonunun karşılığıdır.
         public static byte[] FromHex(string hex)
         {

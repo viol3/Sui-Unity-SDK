@@ -1,16 +1,16 @@
-﻿using System;
+﻿using OpenDive.BCS;
+// BouncyCastle için GEREKLİ using direktifleri
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Macs;
+using Org.BouncyCastle.Crypto.Modes;
+using Org.BouncyCastle.Crypto.Parameters;
+using System;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-
-// BouncyCastle için GEREKLİ using direktifleri
-using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Engines;
-using Org.BouncyCastle.Crypto.Modes;
-using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.Crypto.Digests;
-using Org.BouncyCastle.Crypto.Macs;
 
 // Bu namespace'i kendi projenize göre düzenleyin.
 // namespace Sui.Seal.Models 
@@ -18,12 +18,35 @@ using Org.BouncyCastle.Crypto.Macs;
 
 namespace Sui.Seal
 {
-    public abstract class Ciphertext { }
+    public abstract class Ciphertext : ISerializable
+    {
+        public abstract void Serialize(Serialization serializer);
+    }
 
     public class Aes256GcmCiphertext : Ciphertext
     {
         public byte[] blob { get; set; }
         public byte[]? aad { get; set; }
+
+        public override void Serialize(Serialization serializer)
+        {
+            // 1. Enum varyant indeksini yaz (Aes256Gcm için 0)
+            serializer.SerializeU8(0);
+
+            // 2. Struct'ın alanlarını sırayla serialize et
+            serializer.Serialize(new Bytes(this.blob));
+
+            // bcs.option(bcs.vector(bcs.u8())) serileştirmesi:
+            if (this.aad != null)
+            {
+                serializer.SerializeU8(1); // Some(1)
+                serializer.Serialize(new Bytes(this.aad));
+            }
+            else
+            {
+                serializer.SerializeU8(0); // None(0)
+            }
+        }
     }
 
     public class Hmac256CtrCiphertext : Ciphertext
@@ -31,8 +54,27 @@ namespace Sui.Seal
         public byte[] blob { get; set; }
         public byte[] mac { get; set; }
         public byte[]? aad { get; set; }
+
+        public override void Serialize(Serialization serializer)
+        {
+            // 1. Enum varyant indeksini yaz (Hmac256Ctr için 1)
+            serializer.SerializeU32AsUleb128(1);
+
+            // 2. Struct'ın alanlarını sırayla serialize et
+            serializer.Serialize(new Bytes(this.blob));
+
+            // bcs.option(bcs.vector(bcs.u8())) serileştirmesi:
+            if (this.aad != null)
+            {
+                serializer.SerializeU8(1); // Some(1)
+                serializer.Serialize(new Bytes(this.aad));
+            }
+            else
+            {
+                serializer.SerializeU8(0); // None(0)
+            }
+        }
     }
-    // }
 
     public interface IEncryptionInput
     {

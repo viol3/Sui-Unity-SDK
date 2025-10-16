@@ -13,12 +13,20 @@ namespace Sui.Seal
     // TypeScript'teki Certificate tipinin karşılığı
     public class Certificate
     {
-        public string User { get; set; }
+        public string user { get; set; }
         public string session_vk { get; set; } // Base64
         public ulong creation_time { get; set; } // JS'deki Date.now() milisaniye, C#'ta ulong
         public int ttl_min { get; set; }
         public string signature { get; set; } // Base64
         public string mvr_name { get; set; }
+    }
+
+    public class SignedRequestParams
+    {
+        public byte[] EncKey { get; set; }
+        public byte[] EncKeyPk { get; set; }
+        public byte[] EncVerificationKey { get; set; }
+        public string RequestSignature { get; set; } // Base64 formatında
     }
 
     public class SessionKey
@@ -84,19 +92,16 @@ namespace Sui.Seal
             return Encoding.UTF8.GetBytes(message);
         }
 
-        public async Task<Certificate> GetCertificate()
+        public void SetPersonalMessageSignature(string personalMessageSignature)
         {
-            if (string.IsNullOrEmpty(this.personalMessageSignature))
-            {
-                // Normalde burada 'signer.signPersonalMessage' çağrılır.
-                // Test için sahte bir imza oluşturuyoruz.
-                this.personalMessageSignature = Convert.ToBase64String(Encoding.UTF8.GetBytes("fake-signature-for-testing"));
-                await Task.CompletedTask; // async uyumluluğu için
-            }
+            this.personalMessageSignature = personalMessageSignature;
+        }
 
+        public Certificate GetCertificate()
+        {
             return new Certificate
             {
-                User = this.address,
+                user = this.address,
                 session_vk = Convert.ToBase64String(this.sessionKey.PublicKey().KeyBytes),
                 creation_time = this.creationTimeMs,
                 ttl_min = this.ttlMin,
@@ -105,7 +110,7 @@ namespace Sui.Seal
             };
         }
 
-        public async Task<object> CreateRequestParams(byte[] txBytes)
+        public SignedRequestParams CreateRequestParams(byte[] txBytes)
         {
             if (this.IsExpired())
             {
@@ -126,7 +131,7 @@ namespace Sui.Seal
 
             // TypeScript'teki gibi anonim bir obje döndürüyoruz.
             // Bunu daha sonra güçlü tipli bir sınıfa dönüştürebiliriz.
-            return new
+            return new SignedRequestParams
             {
                 EncKey = encKey,
                 EncKeyPk = encKeyPk,

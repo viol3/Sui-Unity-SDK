@@ -1,11 +1,13 @@
 ﻿using MCL.BLS12_381.Net; // Kendi kripto kütüphanemiz
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using OpenDive.BCS;
 using Sui.Accounts;
 using Sui.Rpc.Client;
 using Sui.Rpc.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
@@ -36,7 +38,7 @@ namespace Sui.Seal
         public KemType KemType { get; set; } = KemType.BonehFranklinBLS12381DemCCA;
         public DemType DemType { get; set; } = DemType.AesGcm256;
         public int Threshold { get; set; }
-        public string PackageId { get; set; }
+        public AccountAddress PackageId { get; set; }
         public string Id { get; set; } // Bu artık byte[] değil, string
         public byte[] Data { get; set; }
         public byte[] Aad { get; set; } = new byte[0];
@@ -46,19 +48,55 @@ namespace Sui.Seal
     public class EncryptedObject
     {
         public int version = 0;
-        public string packageId;
+        public AccountAddress packageId;
         public string id;
-        public (string objectId, int index)[] services;
+        public (AccountAddress objectId, int index)[] services;
         public int threshold;
         public IBEEncryptions encryptedShares;
         public Ciphertext ciphertext;
+
+        public void Serialize(Serialization serializer)
+        {
+            serializer.Serialize((byte)this.version);
+
+            serializer.Serialize(this.packageId);
+            byte[] idBytes = Utils.FromHex(this.id);
+
+            // 2. Bu byte dizisini 'Bytes' wrapper'ı ile serialize ediyoruz.
+            // Bu, başına otomatik olarak ULEB128 uzunluk ön eki ekleyecektir.
+            serializer.Serialize(new Bytes(idBytes));       // String
+
+            // (string, int) tuple dizisini serialize et
+            serializer.SerializeU32AsUleb128((uint)this.services.Length);
+            foreach (var service in this.services)
+            {
+                // Artık 'service.objectId' bir AccountAddress nesnesi.
+                // Serializer, bu nesnenin kendi Serialize metodunu çağırarak
+                // onu doğru şekilde (32 byte, uzunluksuz) yazacak.
+                serializer.Serialize(service.objectId);
+                serializer.SerializeU8((byte)service.index);
+            }
+
+            serializer.SerializeU8((byte)this.threshold);
+
+            this.encryptedShares.Serialize(serializer);
+            this.ciphertext.Serialize(serializer);
+        }
     }
 
     public class DecryptOptions
     {
-        public EncryptedObject EncryptedObject { get; set; }
+        public byte[] Data { get; set; } // Sadece şifreli veri
         public SessionKey SessionKey { get; set; }
         public byte[] TxBytes { get; set; }
+    }
+
+    public class FetchKeysOptions
+    {
+        public string[] Ids { get; set; }
+        public byte[] TxBytes { get; set; }
+        public SessionKey SessionKey { get; set; }
+        public int Threshold { get; set; }
     }
 
     public class SealClient
@@ -186,11 +224,11 @@ namespace Sui.Seal
             var baseKey = await encryptionInput.GenerateKey();
             var shares = Shamir.Split(baseKey, options.Threshold, activeKeyServers.Count);
 
-            var fullId = Utils.ToHex(Utils.Flatten(Utils.FromHex(options.PackageId), Utils.FromHex(options.Id)));
+            var fullId = Utils.ToHex(Utils.Flatten(options.PackageId.KeyBytes, Utils.FromHex(options.Id)));
             var fullIdBytes = Utils.FromHex(fullId);
 
             var publicKeys = activeKeyServers.Select(ks => G2.FromBytes(ks.pk)).ToArray();
-            var objectIds = activeKeyServers.Select(ks => ks.objectId).ToArray();
+            var objectIds = activeKeyServers.Select(ks => new AccountAddress(ks.objectId)).ToArray();
 
             var ibeEncryptions = Ibe.BonehFranklin.EncryptBatched(
                 publicKeys, fullIdBytes, shares, baseKey, options.Threshold, objectIds
@@ -206,7 +244,7 @@ namespace Sui.Seal
 
             var ciphertext = await encryptionInput.Encrypt(demKey);
 
-            var services = activeKeyServers.Select((ks, i) => (ks.objectId, shares[i].Index)).ToArray();
+            var services = activeKeyServers.Select((ks, i) => (new AccountAddress(ks.objectId), shares[i].Index)).ToArray();
 
             var encryptedObject = new EncryptedObject
             {
@@ -222,14 +260,11 @@ namespace Sui.Seal
             return (demKey, encryptedObject);
         }
 
-        public async Task FetchKeys(string[] ids, byte[] txBytes, SessionKey sessionKey, int threshold)
+        public async Task FetchKeys(FetchKeysOptions options)
         {
-            if (threshold > serverConfigs.Count || threshold < 1)
-            {
-                throw new ArgumentOutOfRangeException(nameof(threshold), "Invalid threshold");
-            }
+            if (options.Threshold > serverConfigs.Count || options.Threshold < 1) throw new ArgumentException("...");
 
-            var fullIds = ids.Select(id => Utils.ToHex(Utils.Flatten(Utils.FromHex(sessionKey.GetPackageId()), Utils.FromHex(id)))).ToArray();
+            var fullIds = options.Ids.Select(id => Utils.ToHex(Utils.Flatten(Utils.FromHex(options.SessionKey.GetPackageId()), Utils.FromHex(id)))).ToArray();
 
             // Hangi sunuculardan anahtar istememiz gerektiğini bul
             var keyServersToFetchFrom = keyServers.Values.Where(ks =>
@@ -242,11 +277,14 @@ namespace Sui.Seal
                 return;
             }
 
-            var certificate = await sessionKey.GetCertificate();
-            var requestParams = sessionKey.CreateRequestParams(txBytes); // Bu metodu async yapmamız gerekebilir
+            var myCertificate = options.SessionKey.GetCertificate();
+            var requestParams = options.SessionKey.CreateRequestParams(options.TxBytes); // Bu metodu async yapmamız gerekebilir
 
             using (var httpClient = new HttpClient())
             {
+                httpClient.DefaultRequestHeaders.Add("Client-Sdk-Version", "0.8.6");
+                httpClient.DefaultRequestHeaders.Add("Client-Sdk-Type", "typescript");
+                httpClient.DefaultRequestHeaders.Add("Request-Id", Guid.NewGuid().ToString());
                 foreach (var server in keyServersToFetchFrom)
                 {
                     UnityEngine.Debug.Log($"{server.url} adresinden anahtar isteniyor...");
@@ -255,15 +293,19 @@ namespace Sui.Seal
                     // Bu yapı, sunucunun beklediği JSON formatıyla eşleşmelidir.
                     var requestBody = new
                     {
-                        certificate,
-                        signedRequest = requestParams,
-                        ids = fullIds
+                        ptb = Convert.ToBase64String(options.TxBytes),
+                        enc_key = Convert.ToBase64String(requestParams.EncKeyPk),
+                        enc_verification_key = Convert.ToBase64String(requestParams.EncVerificationKey),
+                        request_signature = requestParams.RequestSignature,
+                        certificate = myCertificate,
                     };
 
                     var jsonContent = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
-
+                    UnityEngine.Debug.Log(JsonConvert.SerializeObject(requestBody));
                     // HTTP POST isteğini yap
-                    var httpResponse = await httpClient.PostAsync(server.url, jsonContent);
+                    var httpResponse = await httpClient.PostAsync(server.url + "/v1/fetch_key", jsonContent);
+                    string content = await httpResponse.Content.ReadAsStringAsync();
+                    UnityEngine.Debug.Log(content);
                     httpResponse.EnsureSuccessStatusCode();
 
                     var jsonResponse = await httpResponse.Content.ReadAsStringAsync();
@@ -291,30 +333,34 @@ namespace Sui.Seal
 
         public async Task<byte[]> Decrypt(DecryptOptions options)
         {
+            var encryptedObject = JsonConvert.DeserializeObject<EncryptedObject>(Encoding.UTF8.GetString(options.Data), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects });
             await FetchKeys(
-                new[] { options.EncryptedObject.id },
-                options.TxBytes,
-                options.SessionKey,
-                options.EncryptedObject.threshold
+                new FetchKeysOptions()
+                {
+                    Ids= new[] { encryptedObject.id },
+                    TxBytes = options.TxBytes,
+                    SessionKey = options.SessionKey,
+                    Threshold = encryptedObject.threshold
+                }
             );
-            if (options.EncryptedObject.encryptedShares.BonehFranklinBLS12381 == null)
+            if (encryptedObject.encryptedShares.BonehFranklinBLS12381 == null)
             {
                 throw new NotSupportedException("Encryption mode not supported");
             }
 
-            var fullId = Utils.ToHex(Utils.Flatten(Utils.FromHex(options.EncryptedObject.packageId), Utils.FromHex(options.EncryptedObject.id)));
+            var fullId = Utils.ToHex(Utils.Flatten(encryptedObject.packageId.KeyBytes, Utils.FromHex(encryptedObject.id)));
 
             // Önbelleğimizde bu 'fullId' için anahtarı olan sunucuları bul
-            var availableServices = options.EncryptedObject.services
+            var availableServices = encryptedObject.services
                 .Where(s => cachedKeys.ContainsKey($"{fullId}:{s.objectId}"))
                 .ToList();
 
-            if (availableServices.Count < options.EncryptedObject.threshold)
+            if (availableServices.Count < encryptedObject.threshold)
             {
                 throw new Exception("Not enough shares to decrypt. Please fetch more keys.");
             }
 
-            var ibeData = options.EncryptedObject.encryptedShares.BonehFranklinBLS12381;
+            var ibeData = encryptedObject.encryptedShares.BonehFranklinBLS12381;
             var encryptedShares = ibeData.encryptedShares;
             var nonce = G2.FromBytes(ibeData.nonce);
             var fullIdBytes = Utils.FromHex(fullId);
@@ -325,7 +371,7 @@ namespace Sui.Seal
                 var (objectId, index) = service;
                 var sk = cachedKeys[$"{fullId}:{objectId}"];
 
-                int serviceIndex = Array.FindIndex(options.EncryptedObject.services, s => s.objectId == objectId && s.index == index);
+                int serviceIndex = Array.FindIndex(encryptedObject.services, s => s.objectId == objectId && s.index == index);
                 var encryptedShare = encryptedShares[serviceIndex];
 
                 var shareData = Ibe.BonehFranklin.DecryptShare(nonce, sk, encryptedShare, fullIdBytes, objectId, index);
@@ -336,8 +382,8 @@ namespace Sui.Seal
             var baseKey = Shamir.Combine(shares.ToArray());
 
             // 3. Adım: "randomnessKey"i türet ve randomness'ı çöz
-            var allObjectIds = options.EncryptedObject.services.Select(s => s.objectId).ToArray();
-            var randomnessKey = Kdf.DeriveKey(Kdf.KeyPurpose.EncryptedRandomness, baseKey, encryptedShares, options.EncryptedObject.threshold, allObjectIds);
+            var allObjectIds = encryptedObject.services.Select(s => s.objectId).ToArray();
+            var randomnessKey = Kdf.DeriveKey(Kdf.KeyPurpose.EncryptedRandomness, baseKey, encryptedShares, encryptedObject.threshold, allObjectIds);
             var randomness = Utils.Xor(ibeData.encryptedRandomness, randomnessKey);
 
             // 4. Adım: Nonce'ı doğrula
@@ -348,10 +394,10 @@ namespace Sui.Seal
             }
 
             // 5. Adım: DEM anahtarını türet
-            var demKey = Kdf.DeriveKey(Kdf.KeyPurpose.DEM, baseKey, encryptedShares, options.EncryptedObject.threshold, allObjectIds);
+            var demKey = Kdf.DeriveKey(Kdf.KeyPurpose.DEM, baseKey, encryptedShares, encryptedObject.threshold, allObjectIds);
 
             // 6. Adım: Ana şifreli metni (ciphertext) DEM anahtarı ile çöz
-            if (options.EncryptedObject.ciphertext is Aes256GcmCiphertext aesCiphertext)
+            if (encryptedObject.ciphertext is Aes256GcmCiphertext aesCiphertext)
             {
                 return await AesGcm256.Decrypt(demKey, aesCiphertext);
             }

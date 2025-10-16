@@ -3,7 +3,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using MCL.BLS12_381.Net;
-using Org.BouncyCastle.Crypto.Digests; // BouncyCastle'dan SHA3 için
+using Org.BouncyCastle.Crypto.Digests;
+using Sui.Accounts; // BouncyCastle'dan SHA3 için
 
 namespace Sui.Seal
 {
@@ -28,7 +29,7 @@ namespace Sui.Seal
         }
 
         // export function kdf(...)
-        public static byte[] KdfBytes(GT element, G2 nonce, byte[] id, string objectId, int index)
+        public static byte[] KdfBytes(GT element, G2 nonce, byte[] id, AccountAddress objectId, int index)
         {
             // if (index < 0 || index > MAX_U8)
             if (index < 0 || index > 255) // MAX_U8 = 255
@@ -51,7 +52,7 @@ namespace Sui.Seal
             var hashToG1Bytes = HashToG1(id).ToBytes();
             digest.BlockUpdate(hashToG1Bytes, 0, hashToG1Bytes.Length);
             // hash.update(fromHex(objectId));
-            var objectIdBytes = Utils.FromHex(objectId); // Bunu Utils.cs'de yazacağız
+            var objectIdBytes = objectId.KeyBytes; // Bunu Utils.cs'de yazacağız
             digest.BlockUpdate(objectIdBytes, 0, objectIdBytes.Length);
             // hash.update(new Uint8Array([index]));
             digest.Update((byte)index);
@@ -89,7 +90,7 @@ namespace Sui.Seal
             byte[] baseKey,
             byte[][] encryptedShares,
             int threshold,
-            string[] keyServers)
+            AccountAddress[] keyServers)
         {
             if (threshold <= 0 || threshold > 255)
             {
@@ -112,7 +113,7 @@ namespace Sui.Seal
             }
             foreach (var keyServer in keyServers)
             {
-                var keyServerBytes = Utils.FromHex(keyServer);
+                var keyServerBytes = keyServer.KeyBytes;
                 digest.BlockUpdate(keyServerBytes, 0, keyServerBytes.Length);
             }
 

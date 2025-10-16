@@ -1,4 +1,4 @@
-//
+﻿//
 //  Account.cs
 //  Sui-Unity-SDK
 //
@@ -26,6 +26,7 @@
 using System;
 using Sui.Cryptography;
 using Sui.Utilities;
+using UnityEngine;
 using static Sui.Cryptography.SignatureUtils;
 
 namespace Sui.Accounts
@@ -174,6 +175,15 @@ namespace Sui.Accounts
         // TODO: Implement SignPersonalMessage
         // https://github.com/MystenLabs/sui/blob/a7c64653f084983c369baf12517992fb5c192aec/sdk/typescript/src/cryptography/keypair.ts#L59
         public SignatureWithBytes SignPersonalMessage(byte[] bytes)
-            => throw new NotImplementedException();
+        {
+            SignatureBase signatureBase = SignWithIntent(bytes, IntentScope.PersonalMessage);
+            string serializedSignature = ToSerializedSignature(signatureBase).Result;
+            return new SignatureWithBytes
+            {
+                Signature = serializedSignature,
+                Bytes = serializedSignature
+            };
+        }
+            
     }
 }

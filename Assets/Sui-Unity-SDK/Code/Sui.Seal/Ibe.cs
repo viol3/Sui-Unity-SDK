@@ -1,5 +1,6 @@
 ﻿// Ibe.cs
 using MCL.BLS12_381.Net;
+using Sui.Accounts;
 using Sui.Seal;
 using System;
 using System.Linq;
@@ -23,7 +24,7 @@ namespace Sui.Seal
                 Share[] shares,
                 byte[] baseKey,
                 int threshold,
-                string[] objectIds
+                AccountAddress[] objectIds
             )
             {
                 if (publicKeys.Length == 0 || publicKeys.Length != shares.Length)
@@ -74,7 +75,7 @@ namespace Sui.Seal
                 };
             }
 
-            public static byte[] DecryptShare(G2 nonce, G1 sk, byte[] encryptedShare, byte[] id, string objectId, int index)
+            public static byte[] DecryptShare(G2 nonce, G1 sk, byte[] encryptedShare, byte[] id, AccountAddress objectId, int index)
             {
                 var key = GT.Pairing(sk, nonce);
                 var derivedKey = Kdf.KdfBytes(key, nonce, id, objectId, index);
