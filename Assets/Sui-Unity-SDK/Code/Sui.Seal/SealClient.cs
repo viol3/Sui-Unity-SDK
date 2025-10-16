@@ -1,8 +1,15 @@
 ﻿using MCL.BLS12_381.Net; // Kendi kripto kütüphanemiz
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Sui.Accounts;
+using Sui.Rpc.Client;
+using Sui.Rpc.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Sui.Seal
@@ -16,6 +23,7 @@ namespace Sui.Seal
 
     public class SealClientOptions
     {
+        public SuiClient SuiClient { get; set; } // SuiClient nesnesini buraya ekliyoruz.
         public List<KeyServerConfig> ServerConfigs { get; set; }
         // suiClient, apiKey gibi kısımları şimdilik atlıyoruz.
     }
@@ -46,72 +54,148 @@ namespace Sui.Seal
         public Ciphertext ciphertext;
     }
 
+    public class DecryptOptions
+    {
+        public EncryptedObject EncryptedObject { get; set; }
+        public SessionKey SessionKey { get; set; }
+        public byte[] TxBytes { get; set; }
+    }
+
     public class SealClient
     {
-        private readonly List<KeyServer> keyServers;
+        private readonly SuiClient suiClient;
+
         private readonly List<KeyServerConfig> serverConfigs;
 
+        private readonly Dictionary<string, KeyServer> keyServers;
         private readonly Dictionary<string, G1> cachedKeys = new Dictionary<string, G1>();
+
+        private const ulong EXPECTED_SERVER_VERSION = 1;
         public SealClient(SealClientOptions options)
         {
-            this.serverConfigs = options.ServerConfigs;
-            var sk = Fr.GetRandom();
-            // 2. Jeneratör noktasını (G) alıp bu gizli anahtarla çarpıyoruz. pk = sk * G
-            var pk = G2.Generator * sk;
-            this.keyServers = options.ServerConfigs.Select(config => new KeyServer
+            if (options.SuiClient == null)
             {
+                throw new ArgumentNullException(nameof(options.SuiClient), "SuiClient cannot be null.");
+            }
+            this.suiClient = options.SuiClient;
+            this.serverConfigs = options.ServerConfigs;
+            this.keyServers = new Dictionary<string, KeyServer>();
+        }
 
-                objectId = config.objectId,
-                pk = pk.ToBytes() // Test için rastgele public key'ler
-            }).ToList();
+        public async Task InitializeAsync()
+        {
+            var objectIds = serverConfigs.Select(c => c.objectId).ToList();
+            var objectIdAddresses = objectIds.Select(id => new AccountAddress(id)).ToList();
+            // SUI SDK'nızdaki 'GetObject' veya 'MultiGetObjects' metodunu kullanın.
+            // Burada MultiGetObjects varsayılmıştır.
+            var objectResponses = await suiClient.MultiGetObjectsAsync(
+                objectIdAddresses,
+                new ObjectDataOptions { ShowContent = true }
+            );
+
+            foreach (var response in objectResponses.Result)
+            {
+                if (response.Error != null)
+                {
+                    // Hata yönetimi
+                    continue;
+                }
+                
+                var moveObject = (ParsedMoveObject)response.Data.Content.ParsedData;
+                // NOT: 'fields' içindeki 'url' ve 'pk' alan adlarının, Move objesindeki
+                // alan adlarıyla eşleştiğinden emin olun.
+                var fields = moveObject.Fields;
+
+                var firstVersion = Convert.ToUInt64(fields["first_version"]);
+                var lastVersion = Convert.ToUInt64(fields["last_version"]);
+
+                if (EXPECTED_SERVER_VERSION < firstVersion || EXPECTED_SERVER_VERSION > lastVersion)
+                {
+                    throw new Exception($"Key server {response.Data.ObjectID} version mismatch. Expected {EXPECTED_SERVER_VERSION}, but server supports {firstVersion}-{lastVersion}.");
+                }
+
+                var fieldNameInput = new DynamicFieldNameInput("u64", EXPECTED_SERVER_VERSION.ToString());
+
+                var versionedResponse = await suiClient.GetDynamicFieldObjectAsync(
+                    response.Data.ObjectID,
+                    fieldNameInput
+                );
+
+                if (versionedResponse.Error != null)
+                {
+                    continue;
+                }
+
+                var topLevelFields = ((ParsedMoveObject)versionedResponse.Result.Data.Content.ParsedData).Fields;
+
+                JToken valueToken = topLevelFields["value"];
+                var valueJObject = (JObject)valueToken;
+                // Bu 'value' objesinin içindeki 'fields' anahtarını alıyoruz.
+                if (valueJObject.TryGetValue("fields", out var fieldsToken))
+                {
+                    var fieldsJObject = (JObject)fieldsToken;
+                    // Artık en içteki fields objesindeyiz ve url/pk'ya erişebiliriz.
+                    var url = fieldsJObject["url"]?.ToString();
+
+                    byte[] pkBytes = null;
+                    var pkArray = fieldsJObject["pk"] as JArray;
+                    if (pkArray != null)
+                    {
+                        // 'pk' bir JArray, içindeki her bir sayıyı byte'a çeviriyoruz.
+                        pkBytes = pkArray.Select(jv => (byte)jv).ToArray();
+                    }
+
+                    // --- PK FORMAT KONTROLÜ ---
+                    // Eğer 'pk' base64 string olarak geliyorsa, üstteki satır yerine bunu kullan:
+                    // var pkBase64String = fieldsJObject["pk"]?.ToString();
+                    // var pkBytes = Convert.FromBase64String(pkBase64String);
+
+                    if (!string.IsNullOrEmpty(url) && pkBytes != null)
+                    {
+                        var keyServer = new KeyServer
+                        {
+                            objectId = response.Data.ObjectID.ToString(),
+                            url = url,
+                            pk = pkBytes // veya pkBytes
+                        };
+                        this.keyServers[keyServer.objectId] = keyServer;
+                    }
+                }
+
+            }
         }
 
         // Bu, TypeScript'teki 'encrypt.ts' içindeki ana 'encrypt' fonksiyonunun C# karşılığıdır.
         public async Task<(byte[] demKey, EncryptedObject encryptedObject)> Encrypt(EncryptOptions options)
         {
-            // === Giriş kontrolleri ===
+            if (keyServers.Count == 0)
+            {
+                throw new InvalidOperationException("SealClient is not initialized. Call InitializeAsync() first.");
+            }
+
+            // DÜZELTME 2: Dictionary'deki tüm sunucuları almak için .Values.ToList() kullanıyoruz.
+            var activeKeyServers = this.keyServers.Values.ToList();
+
             if (options.Threshold <= 0 || options.Threshold > Utils.MAX_U8 ||
-                keyServers.Count < options.Threshold || keyServers.Count > Utils.MAX_U8)
+                activeKeyServers.Count < options.Threshold || activeKeyServers.Count > Utils.MAX_U8)
             {
                 throw new ArgumentException("Invalid key servers or threshold");
             }
 
-            // === 1. Adım: DEM Tipine Göre Şifreleme Girişi Oluştur ===
-            IEncryptionInput encryptionInput;
-            switch (options.DemType)
-            {
-                case DemType.AesGcm256:
-                    encryptionInput = new AesGcm256(options.Data, options.Aad);
-                    break;
-                // case DemType.Hmac256Ctr:
-                //     encryptionInput = new Hmac256Ctr(options.Data, options.Aad);
-                //     break;
-                default:
-                    throw new NotSupportedException("Unsupported DEM type");
-            }
-
-            // === 2. Adım: Rastgele bir "base key" oluştur ===
-            // const baseKey = await encryptionInput.generateKey();
+            IEncryptionInput encryptionInput = new AesGcm256(options.Data, options.Aad);
             var baseKey = await encryptionInput.GenerateKey();
+            var shares = Shamir.Split(baseKey, options.Threshold, activeKeyServers.Count);
 
-            // === 3. Adım: Base key'i Shamir ile paylara ayır ===
-            // const shares = split(baseKey, threshold, keyServers.length);
-            var shares = Shamir.Split(baseKey, options.Threshold, this.keyServers.Count);
-
-            // === 4. Adım: Payları IBE ile şifrele ===
-            // const fullId = createFullId(packageId, id);
             var fullId = Utils.ToHex(Utils.Flatten(Utils.FromHex(options.PackageId), Utils.FromHex(options.Id)));
             var fullIdBytes = Utils.FromHex(fullId);
 
-            var publicKeys = this.keyServers.Select(ks => G2.FromBytes(ks.pk)).ToArray();
-            var objectIds = this.keyServers.Select(ks => ks.objectId).ToArray();
+            var publicKeys = activeKeyServers.Select(ks => G2.FromBytes(ks.pk)).ToArray();
+            var objectIds = activeKeyServers.Select(ks => ks.objectId).ToArray();
 
-            // const encryptedShares = encryptBatched(...)
             var ibeEncryptions = Ibe.BonehFranklin.EncryptBatched(
                 publicKeys, fullIdBytes, shares, baseKey, options.Threshold, objectIds
             );
-            // === 5. Adım: DEM anahtarını türet ===
-            // const demKey = deriveKey(...)
+
             var demKey = Kdf.DeriveKey(
                 Kdf.KeyPurpose.DEM,
                 baseKey,
@@ -120,12 +204,9 @@ namespace Sui.Seal
                 objectIds
             );
 
-            // === 6. Adım: Orijinal veriyi DEM anahtarı ile şifrele ===
-            // const ciphertext = await encryptionInput.encrypt(demKey);
             var ciphertext = await encryptionInput.Encrypt(demKey);
 
-            // === 7. Adım: Sonucu EncryptedObject olarak paketle ===
-            var services = keyServers.Select((ks, i) => (ks.objectId, shares[i].Index)).ToArray();
+            var services = activeKeyServers.Select((ks, i) => (ks.objectId, shares[i].Index)).ToArray();
 
             var encryptedObject = new EncryptedObject
             {
@@ -141,26 +222,99 @@ namespace Sui.Seal
             return (demKey, encryptedObject);
         }
 
-        public async Task<byte[]> Decrypt(EncryptedObject encryptedObject)
+        public async Task FetchKeys(string[] ids, byte[] txBytes, SessionKey sessionKey, int threshold)
         {
-            if (encryptedObject.encryptedShares.BonehFranklinBLS12381 == null)
+            if (threshold > serverConfigs.Count || threshold < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(threshold), "Invalid threshold");
+            }
+
+            var fullIds = ids.Select(id => Utils.ToHex(Utils.Flatten(Utils.FromHex(sessionKey.GetPackageId()), Utils.FromHex(id)))).ToArray();
+
+            // Hangi sunuculardan anahtar istememiz gerektiğini bul
+            var keyServersToFetchFrom = keyServers.Values.Where(ks =>
+                !fullIds.All(fullId => cachedKeys.ContainsKey($"{fullId}:{ks.objectId}"))
+            ).ToList();
+
+            if (keyServersToFetchFrom.Count == 0)
+            {
+                UnityEngine.Debug.Log("Gerekli tüm anahtarlar zaten önbellekte.");
+                return;
+            }
+
+            var certificate = await sessionKey.GetCertificate();
+            var requestParams = sessionKey.CreateRequestParams(txBytes); // Bu metodu async yapmamız gerekebilir
+
+            using (var httpClient = new HttpClient())
+            {
+                foreach (var server in keyServersToFetchFrom)
+                {
+                    UnityEngine.Debug.Log($"{server.url} adresinden anahtar isteniyor...");
+
+                    // Sunucuya gönderilecek isteğin gövdesini (body) oluştur.
+                    // Bu yapı, sunucunun beklediği JSON formatıyla eşleşmelidir.
+                    var requestBody = new
+                    {
+                        certificate,
+                        signedRequest = requestParams,
+                        ids = fullIds
+                    };
+
+                    var jsonContent = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
+
+                    // HTTP POST isteğini yap
+                    var httpResponse = await httpClient.PostAsync(server.url, jsonContent);
+                    httpResponse.EnsureSuccessStatusCode();
+
+                    var jsonResponse = await httpResponse.Content.ReadAsStringAsync();
+                    // Gelen cevabı parse et (Bu kısım sunucunun cevabına göre değişir)
+                    var keyResponse = JObject.Parse(jsonResponse);
+
+                    foreach (var fullId in fullIds)
+                    {
+                        if (keyResponse.TryGetValue(fullId, out var keyToken))
+                        {
+                            var keyBytes = Convert.FromBase64String(keyToken.ToString());
+                            var partialKey = G1.FromBytes(keyBytes);
+
+                            // Gelen anahtarın geçerliliğini doğrula (verifyUserSecretKey)
+                            // ...
+
+                            // Anahtarı önbelleğe ekle
+                            AddKeyToCache(fullId, server.objectId, partialKey);
+                            UnityEngine.Debug.Log($"Anahtar {server.objectId} sunucusundan alındı ve önbelleğe eklendi.");
+                        }
+                    }
+                }
+            }
+        }
+
+        public async Task<byte[]> Decrypt(DecryptOptions options)
+        {
+            await FetchKeys(
+                new[] { options.EncryptedObject.id },
+                options.TxBytes,
+                options.SessionKey,
+                options.EncryptedObject.threshold
+            );
+            if (options.EncryptedObject.encryptedShares.BonehFranklinBLS12381 == null)
             {
                 throw new NotSupportedException("Encryption mode not supported");
             }
 
-            var fullId = Utils.ToHex(Utils.Flatten(Utils.FromHex(encryptedObject.packageId), Utils.FromHex(encryptedObject.id)));
+            var fullId = Utils.ToHex(Utils.Flatten(Utils.FromHex(options.EncryptedObject.packageId), Utils.FromHex(options.EncryptedObject.id)));
 
             // Önbelleğimizde bu 'fullId' için anahtarı olan sunucuları bul
-            var availableServices = encryptedObject.services
+            var availableServices = options.EncryptedObject.services
                 .Where(s => cachedKeys.ContainsKey($"{fullId}:{s.objectId}"))
                 .ToList();
 
-            if (availableServices.Count < encryptedObject.threshold)
+            if (availableServices.Count < options.EncryptedObject.threshold)
             {
                 throw new Exception("Not enough shares to decrypt. Please fetch more keys.");
             }
 
-            var ibeData = encryptedObject.encryptedShares.BonehFranklinBLS12381;
+            var ibeData = options.EncryptedObject.encryptedShares.BonehFranklinBLS12381;
             var encryptedShares = ibeData.encryptedShares;
             var nonce = G2.FromBytes(ibeData.nonce);
             var fullIdBytes = Utils.FromHex(fullId);
@@ -171,7 +325,7 @@ namespace Sui.Seal
                 var (objectId, index) = service;
                 var sk = cachedKeys[$"{fullId}:{objectId}"];
 
-                int serviceIndex = Array.FindIndex(encryptedObject.services, s => s.objectId == objectId && s.index == index);
+                int serviceIndex = Array.FindIndex(options.EncryptedObject.services, s => s.objectId == objectId && s.index == index);
                 var encryptedShare = encryptedShares[serviceIndex];
 
                 var shareData = Ibe.BonehFranklin.DecryptShare(nonce, sk, encryptedShare, fullIdBytes, objectId, index);
@@ -182,8 +336,8 @@ namespace Sui.Seal
             var baseKey = Shamir.Combine(shares.ToArray());
 
             // 3. Adım: "randomnessKey"i türet ve randomness'ı çöz
-            var allObjectIds = encryptedObject.services.Select(s => s.objectId).ToArray();
-            var randomnessKey = Kdf.DeriveKey(Kdf.KeyPurpose.EncryptedRandomness, baseKey, encryptedShares, encryptedObject.threshold, allObjectIds);
+            var allObjectIds = options.EncryptedObject.services.Select(s => s.objectId).ToArray();
+            var randomnessKey = Kdf.DeriveKey(Kdf.KeyPurpose.EncryptedRandomness, baseKey, encryptedShares, options.EncryptedObject.threshold, allObjectIds);
             var randomness = Utils.Xor(ibeData.encryptedRandomness, randomnessKey);
 
             // 4. Adım: Nonce'ı doğrula
@@ -194,10 +348,10 @@ namespace Sui.Seal
             }
 
             // 5. Adım: DEM anahtarını türet
-            var demKey = Kdf.DeriveKey(Kdf.KeyPurpose.DEM, baseKey, encryptedShares, encryptedObject.threshold, allObjectIds);
+            var demKey = Kdf.DeriveKey(Kdf.KeyPurpose.DEM, baseKey, encryptedShares, options.EncryptedObject.threshold, allObjectIds);
 
             // 6. Adım: Ana şifreli metni (ciphertext) DEM anahtarı ile çöz
-            if (encryptedObject.ciphertext is Aes256GcmCiphertext aesCiphertext)
+            if (options.EncryptedObject.ciphertext is Aes256GcmCiphertext aesCiphertext)
             {
                 return await AesGcm256.Decrypt(demKey, aesCiphertext);
             }

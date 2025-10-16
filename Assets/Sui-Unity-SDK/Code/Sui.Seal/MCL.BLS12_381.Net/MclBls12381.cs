@@ -7,6 +7,7 @@ namespace MCL.BLS12_381.Net
     public class MclBls12381
     {
         internal readonly Lazy<mclBn_init> MclBnInit;
+        internal readonly Lazy<mclBn_setETHserialization> MclBnSetETHserialization;
 
         internal readonly Lazy<mclBnFr_clear> MclBnFrClear;
         internal readonly Lazy<mclBnFr_setInt32> MclBnFrSetInt32;
@@ -92,7 +93,7 @@ namespace MCL.BLS12_381.Net
         {
             // load all delegates
             MclBnInit = LazyDelegate<mclBn_init>();
-
+            MclBnSetETHserialization = LazyDelegate<mclBn_setETHserialization>();
             MclBnFrClear = LazyDelegate<mclBnFr_clear>();
             MclBnFrSetInt32 = LazyDelegate<mclBnFr_setInt32>();
             MclBnFrSetByCsprng = LazyDelegate<mclBnFr_setByCSPRNG>();
@@ -170,6 +171,8 @@ namespace MCL.BLS12_381.Net
             const int compileTimeVar = 46;
             var error = MclBnInit.Value(curveBls12381, compileTimeVar);
             if (error != 0) throw new InvalidOperationException("mclBn_init returned error: " + error);
+
+            MclBnSetETHserialization.Value.Invoke(1);
         }
 
 

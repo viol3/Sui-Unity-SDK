@@ -5,5 +5,6 @@
     {
         public string objectId;
         public byte[] pk; // G2 public key
+        public string url;
     }
 }

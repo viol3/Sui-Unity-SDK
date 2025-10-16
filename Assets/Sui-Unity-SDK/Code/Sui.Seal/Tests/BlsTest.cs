@@ -1,5 +1,7 @@
 ﻿using MCL.BLS12_381.Net; // Kütüphanenin C# sınıflarını kullanabilmek için
 using Sui.Accounts;
+using Sui.Rpc;
+using Sui.Rpc.Client;
 using Sui.Seal;
 using System;            // Exception ve BitConverter kullanmak için
 using System.Collections.Generic;
@@ -11,12 +13,14 @@ using UnityEngine;
 
 public class BlsTest : MonoBehaviour
 {
+    SuiClient _suiClient;
     Account _account;
     string _packageId = "0xf3dfe70b4916fecaecf7928bb8221031c28d5130c66e8fa7e645ce8785846f91";
     byte[] _policyId;
     byte[] _nonceBytes = { 179, 187, 103, 40, 166, 131, 240, 66, 249, 74, 252, 248, 94, 86, 237, 156, 126, 166, 204, 121, 87, 83, 242, 54, 142, 192, 68, 94, 192, 49, 245, 27 };
     async void Start()
     {
+        _suiClient = new SuiClient(Constants.TestnetConnection);
         _account = new Account("0x8358b8f5a0850969194d0cd0e6e70dad2ec27b981669a8caf9fc566a17c9c115");
         //byte[] nonce = Utils.GenerateNonce();
         _policyId = Utils.CreatePolicyId(_account.SuiAddress().KeyHex, _nonceBytes);
@@ -43,23 +47,27 @@ public class BlsTest : MonoBehaviour
             // 1. Test için konfigürasyon oluştur
             var serverConfigs = new List<KeyServerConfig>
             {
-                new KeyServerConfig { objectId = "0x12", weight = 1 },
-                new KeyServerConfig { objectId = "0x23", weight = 1 },
-                new KeyServerConfig { objectId = "0x34", weight = 1 },
+                new KeyServerConfig { objectId = "0x73d05d62c18d9374e3ea529e8e0ed6161da1a141a94d3f76ae3fe4e99356db75", weight = 1 },
+                new KeyServerConfig { objectId = "0xf5d14a81a982144ae441cd7d64b09027f116a468bd36e7eca494f750591623c8", weight = 1 },
             };
-            var options = new SealClientOptions { ServerConfigs = serverConfigs };
+            var options = new SealClientOptions { ServerConfigs = serverConfigs, SuiClient = _suiClient };
 
             // 2. SealClient'ı başlat
             var client = new SealClient(options);
             Debug.Log("SealClient başarıyla oluşturuldu.");
+            await client.InitializeAsync();
+
+            var sessionKey = await SessionKey.Create(_account.SuiAddress().ToHex(), _packageId, 10);
 
             // 3. Şifrelenecek veriyi hazırla
+            string originalMessage = "myspecialmessage";
+            int threshold = 2;
             var encryptOptions = new EncryptOptions
             {
-                Threshold = 2,
+                Threshold = threshold,
                 PackageId = _packageId, // Hex string
                 Id = Utils.ToHex(_policyId),         // Hex string
-                Data = Encoding.UTF8.GetBytes("myspecialmessage")
+                Data = Encoding.UTF8.GetBytes(originalMessage)
             };
 
             // 4. Şifreleme (seal) işlemini AWAIT ile gerçekleştir
@@ -69,10 +77,27 @@ public class BlsTest : MonoBehaviour
             {
                 throw new Exception("Encrypt metodu beklenen çıktıyı vermedi.");
             }
-
             Debug.Log("SealClient.Encrypt başarıyla çalıştı.");
             Debug.Log($"Oluşturulan Simetrik Anahtar (Hex): {Utils.ToHex(key)}");
             Debug.Log($"Şifrelenmiş Nonce (Hex): {Utils.ToHex(encryptedData.encryptedShares.BonehFranklinBLS12381.nonce)}");
+
+            Debug.Log("Şifreyi çözmek için sunuculardan parça anahtarlar alınıyor (simülasyon)...");
+            var decryptOptions = new DecryptOptions
+            {
+                EncryptedObject = encryptedData,
+                SessionKey = sessionKey,
+                TxBytes = new byte[] { 1, 2, 3 } // Test için sahte işlem verisi
+            };
+            byte[] decryptedMessageBytes = await client.Decrypt(decryptOptions);
+            string decryptedMessage = Encoding.UTF8.GetString(decryptedMessageBytes);
+            Debug.Log("Veri başarıyla çözüldü.");
+
+            // === 5. DOĞRULAMA (VERIFICATION) ===
+            if (originalMessage != decryptedMessage)
+            {
+                throw new Exception($"Şifre çözme başarısız! Orijinal: '{originalMessage}', Çözülen: '{decryptedMessage}'");
+            }
+            
 
             Debug.Log("<color=green>SealClient Entegrasyon Testi: BAŞARILI</color>");
         }

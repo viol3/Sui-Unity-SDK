@@ -5,8 +5,10 @@ namespace MCL.BLS12_381.Net
     [SymbolName(nameof(mclBn_init))]
     public delegate int mclBn_init(int curve, int maxUnitSize);
 
+    [SymbolName(nameof(mclBn_setETHserialization))]
+    public delegate void mclBn_setETHserialization(int enable);
     /* ====== Fr ====== */
-    
+
     [SymbolName(nameof(mclBnFr_clear))]
     public unsafe delegate void mclBnFr_clear(Fr* x);
 
