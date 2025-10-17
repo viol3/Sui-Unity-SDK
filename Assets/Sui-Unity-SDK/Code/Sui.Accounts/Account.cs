@@ -24,6 +24,7 @@
 //
 
 using System;
+using OpenDive.BCS;
 using Sui.Cryptography;
 using Sui.Utilities;
 using UnityEngine;
@@ -176,12 +177,14 @@ namespace Sui.Accounts
         // https://github.com/MystenLabs/sui/blob/a7c64653f084983c369baf12517992fb5c192aec/sdk/typescript/src/cryptography/keypair.ts#L59
         public SignatureWithBytes SignPersonalMessage(byte[] bytes)
         {
-            SignatureBase signatureBase = SignWithIntent(bytes, IntentScope.PersonalMessage);
-            string serializedSignature = ToSerializedSignature(signatureBase).Result;
+            var serializer = new Serialization();
+            serializer.Serialize(new Bytes(bytes));
+            byte[] messageBytes = serializer.GetBytes();
+            SignatureBase rawSignature = SignWithIntent(messageBytes, IntentScope.PersonalMessage);
             return new SignatureWithBytes
             {
-                Signature = serializedSignature,
-                Bytes = serializedSignature
+                Signature = ToSerializedSignature(rawSignature).Result,
+                Bytes = Convert.ToBase64String(bytes)
             };
         }
             

@@ -12,12 +12,20 @@ namespace MCL.BLS12_381.Net
         public static G2 Generator = GetGenerator();
         public static G2 Zero = GetZero();
 
+        //public static G2 GetGenerator()
+        //{
+        //    // Some fixed generator can be obtained via hashing any message
+        //    // (all non trivial elements are generators since group has prime order)
+        //    var res = new G2();
+        //    res.SetHashOf(new byte[] {0xde, 0xad, 0xbe, 0xef});
+        //    return res;
+        //}
+
+        [Pure]
         public static G2 GetGenerator()
         {
-            // Some fixed generator can be obtained via hashing any message
-            // (all non trivial elements are generators since group has prime order)
             var res = new G2();
-            res.SetHashOf(new byte[] {0xde, 0xad, 0xbe, 0xef});
+            res.SetHashOf(new byte[] { });
             return res;
         }
 

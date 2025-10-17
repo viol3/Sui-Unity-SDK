@@ -1,5 +1,6 @@
 ﻿using Chaos.NaCl;
 using MCL.BLS12_381.Net; // Kendi kripto kütüphanemiz
+using OpenDive.BCS;
 using Sui.Cryptography.Ed25519;
 using System;
 using System.Security.Cryptography;
@@ -27,6 +28,28 @@ namespace Sui.Seal
         public byte[] EncKeyPk { get; set; }
         public byte[] EncVerificationKey { get; set; }
         public string RequestSignature { get; set; } // Base64 formatında
+    }
+
+    public class RequestFormat : ISerializable
+    {
+        public byte[] Ptb { get; set; }
+        public byte[] EncKey { get; set; }
+        public byte[] EncVerificationKey { get; set; }
+
+        public RequestFormat(byte[] ptb, byte[] encKey, byte[] encVerificationKey)
+        {
+            this.Ptb = ptb;
+            this.EncKey = encKey;
+            this.EncVerificationKey = encVerificationKey;
+        }
+
+        public void Serialize(Serialization serializer)
+        {
+            // Struct'ı, TS'deki bcs.struct tanımıyla aynı sırayla serialize et
+            serializer.Serialize(new Bytes(this.Ptb));
+            serializer.Serialize(new Bytes(this.EncKey));
+            serializer.Serialize(new Bytes(this.EncVerificationKey));
+        }
     }
 
     public class SessionKey
@@ -122,9 +145,12 @@ namespace Sui.Seal
             var encKeyPk = ElGamal.ToPublicKey(encKey);
             var encVerificationKey = ElGamal.ToVerificationKey(encKey);
 
-            // İmzalanacak mesajı oluştur (BCS formatı şimdilik atlanmıştır).
-            // RequestFormat.serialize(...)
-            var msgToSign = Utils.Flatten(txBytes, encKeyPk, encVerificationKey);
+            var requestFormat = new RequestFormat(txBytes, encKeyPk, encVerificationKey);
+
+            // 2. Bu nesneyi BCS formatına çevir.
+            var serializer = new Serialization();
+            serializer.Serialize(requestFormat);
+            byte[] msgToSign = serializer.GetBytes();
 
             // Mesajı sessionKey ile imzala.
             var requestSignature = this.sessionKey.Sign(msgToSign); // Bu metodu yazmamız gerekecek
@@ -140,5 +166,7 @@ namespace Sui.Seal
             };
         }
     }
+
+
 
 }

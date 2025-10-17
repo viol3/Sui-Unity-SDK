@@ -33,17 +33,18 @@ public class BlsTest : MonoBehaviour
     string _moduleName = "private_data";
     string _funcName = "store_entry";
     byte[] _policyId;
-    JsonSerializerSettings _jsonSettings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects };
     byte[] _nonceBytes = { 179, 187, 103, 40, 166, 131, 240, 66, 249, 74, 252, 248, 94, 86, 237, 156, 126, 166, 204, 121, 87, 83, 242, 54, 142, 192, 68, 94, 192, 49, 245, 27 };
     async void Start()
     {
         _suiClient = new SuiClient(Constants.TestnetConnection);
         _account = new Account("0x8358b8f5a0850969194d0cd0e6e70dad2ec27b981669a8caf9fc566a17c9c115");
+        Debug.Log("Sui Address => " + _account.SuiAddress());
         //byte[] nonce = Utils.GenerateNonce();
         _policyId = Sui.Seal.Utils.CreatePolicyId(_account.SuiAddress().KeyHex, _nonceBytes);
-        //RunAllTests();
+        RunAllTests();
+        //TestSignPersonalMessage();
         //await DecryptTest();
-        TestBCSSerialization();
+        //TestBCSSerialization();
     }
 
     private void TestBCSSerialization()
@@ -119,10 +120,13 @@ public class BlsTest : MonoBehaviour
         Debug.Log("====== TÜM TESTLER BAŞLATILIYOR (PLATFORM: WINDOWS/EDITOR) ======");
         
         EncryptedObject encryptedObject = await TestSealClientEncrypt();
-        var serializer = new Serialization();
-        encryptedObject.Serialize(serializer);
-        byte[] encryptedBytes = serializer.GetBytes();
-        Debug.Log(encryptedBytes.Length);
+
+        await DecryptTest(encryptedObject);
+        //var serializer = new Serialization();
+        //encryptedObject.Serialize(serializer);
+        //byte[] encryptedBytes = serializer.GetBytes();
+        //Debug.Log($"[C#] TAMAMI: {Sui.Seal.Utils.ToHex(encryptedBytes)}");
+        //Debug.Log(encryptedBytes.Length);
         //TransactionBlock tx_block = new TransactionBlock();
         //tx_block.AddMoveCallTx
         //(
@@ -135,8 +139,74 @@ public class BlsTest : MonoBehaviour
         //    }
         //);
         //await _suiClient.SignAndExecuteTransactionBlockAsync(tx_block, _account);
-        Debug.Log("====== TÜM TESTLER TAMAMLANDI ======");
+        //Debug.Log("====== TÜM TESTLER TAMAMLANDI ======");
     }
+
+    private void TestSignPersonalMessage()
+    {
+        string correctSignature = "AOpTGvPzr2Enz5Dq+lUbZIQo0GOJon3Hx7PRL4K/57TqVnLrV9hoGSytoNydhXz9Y2Jb5WMLyDgCZx4HGJsh/QRYO2MQSeQ/0N31rNHbB0ecbpO7Wh+9Q+7m7tk2KiRtDA==";
+        byte[] correctSignatureBytes = Convert.FromBase64String(correctSignature);
+        
+        SignatureWithBytes signatureWithBytes = _account.SignPersonalMessage(Encoding.UTF8.GetBytes("aaaaa"));
+        Debug.Log("Correct => " + Sui.Seal.Utils.ToHex(correctSignatureBytes));
+        Debug.Log("Actual => " + Sui.Seal.Utils.ToHex(Convert.FromBase64String(signatureWithBytes.Signature)));
+    }
+    private async Task DecryptTest(EncryptedObject encryptedObject)
+    {
+        var serverConfigs = new List<KeyServerConfig>
+        {
+            new KeyServerConfig { objectId = "0x73d05d62c18d9374e3ea529e8e0ed6161da1a141a94d3f76ae3fe4e99356db75", weight = 1 },
+            new KeyServerConfig { objectId = "0xf5d14a81a982144ae441cd7d64b09027f116a468bd36e7eca494f750591623c8", weight = 1 },
+        };
+        var options = new SealClientOptions { ServerConfigs = serverConfigs, SuiClient = _suiClient };
+
+        // 2. SealClient'ı başlat
+        var client = new SealClient(options);
+        Debug.Log("SealClient başarıyla oluşturuldu.");
+        await client.InitializeAsync();
+        var sessionKey = await SessionKey.Create(_account.SuiAddress().ToHex(), _packageId, 10);
+        SignatureWithBytes signatureWithBytes = _account.SignPersonalMessage(sessionKey.GetPersonalMessage());
+        sessionKey.SetPersonalMessageSignature(signatureWithBytes.Signature);
+
+        Serialization serialization = new Serialization();
+        // ... (encryptedObjectBytes'ı Move objesinin field'ından çekme) ...
+        encryptedObject.Serialize(serialization);
+        var encryptedBytes = serialization.GetBytes();
+        // === 3. TRANSACTION OLUŞTURMA ===
+        // decrypt.ts örneğindeki gibi, şifre çözmek için de bir transaction gerekir.
+        var tx_block = new TransactionBlock();
+
+        tx_block.AddMoveCallTx
+        (
+            SuiMoveNormalizedStructType.FromStr($"{_packageId}::{_moduleName}::seal_approve"),
+            new SerializableTypeTag[] { },
+            new TransactionArgument[]
+            {
+                tx_block.AddPure(new OpenDive.BCS.Bytes(_policyId)),
+                tx_block.AddObjectInput(_objectIdToDecrypt)
+            }
+        );
+        //tx_block.SetSender(_account);
+        var txBytes = await tx_block.Build(new BuildOptions(_suiClient, null, true, null));
+        var txBytesForServer = txBytes.Skip(1).ToArray();
+        Debug.Log("--------- C# DEBUG BAŞLANGIÇ ---------");
+        Debug.Log($"C# txBytes UZUNLUK: {txBytesForServer.Length}");
+        Debug.Log($"C# txBytes (HEX): {Sui.Seal.Utils.ToHex(txBytesForServer)}");
+        Debug.Log("--------- C# DEBUG BİTİŞ ---------");
+
+        var decryptOptions = new DecryptOptions
+        {
+            Data = encryptedBytes,
+            SessionKey = sessionKey,
+            TxBytes = txBytesForServer
+        };
+        byte[] decryptedMessageBytes = await client.Decrypt(decryptOptions);
+        string decryptedMessage = Encoding.UTF8.GetString(decryptedMessageBytes);
+        Debug.Log("Veri başarıyla çözüldü.");
+        Debug.Log(decryptedMessage);
+        Debug.Log("<color=green>SealClient Entegrasyon Testi: BAŞARILI</color>");
+    }
+
 
     private async Task DecryptTest()
     {
@@ -152,23 +222,9 @@ public class BlsTest : MonoBehaviour
         Debug.Log("SealClient başarıyla oluşturuldu.");
         await client.InitializeAsync();
         var sessionKey = await SessionKey.Create(_account.SuiAddress().ToHex(), _packageId, 10);
-
-        // --- YENİ EKLENEN SATIRLAR ---
-        Debug.Log("--------- C# DEBUG BAŞLANGIÇ ---------");
-        // Mesajın metin halini logla
-        Debug.Log($"C# İmzalanacak Metin: {Encoding.UTF8.GetString(sessionKey.GetPersonalMessage())}");
-        // Mesajın byte dizisi halini logla
-        Debug.Log($"C# İmzalanacak Byte'lar: [{string.Join(", ", sessionKey.GetPersonalMessage())}]");
-        Debug.Log("--------- C# DEBUG BİTİŞ ---------");
-
         SignatureWithBytes signatureWithBytes = _account.SignPersonalMessage(sessionKey.GetPersonalMessage());
         sessionKey.SetPersonalMessageSignature(signatureWithBytes.Signature);
 
-        const string sabitMesaj = "Accessing keys of package 0xabc for 10 mins from 2025-10-16 12:00:00 UTC, session key FAKEKEY";
-        var personalMessage = Encoding.UTF8.GetBytes(sabitMesaj);
-        SignatureWithBytes signatureWithBytes2 = _account.SignPersonalMessage(personalMessage);
-        
-        Debug.Log("Signature => " + signatureWithBytes2.Signature);
         var response = await _suiClient.GetObjectAsync(new AccountAddress(_objectIdToDecrypt), new ObjectDataOptions() { ShowContent = true});
         var moveObject = (ParsedMoveObject)response.Result.Data.Content.ParsedData;
         // NOT: 'fields' içindeki 'url' ve 'pk' alan adlarının, Move objesindeki

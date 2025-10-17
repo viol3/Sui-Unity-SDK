@@ -39,7 +39,6 @@ namespace Sui.Seal
 
             // const hash = sha3_256.create();
             var digest = new Sha3Digest(256);
-
             // hash.update(KDF_DST);
             digest.BlockUpdate(KDF_DST, 0, KDF_DST.Length);
             // hash.update(element.toBytes());
@@ -52,7 +51,7 @@ namespace Sui.Seal
             var hashToG1Bytes = HashToG1(id).ToBytes();
             digest.BlockUpdate(hashToG1Bytes, 0, hashToG1Bytes.Length);
             // hash.update(fromHex(objectId));
-            var objectIdBytes = objectId.KeyBytes; // Bunu Utils.cs'de yazacağız
+            var objectIdBytes = Utils.FromHex(objectId.ToHex()); // Bunu Utils.cs'de yazacağız
             digest.BlockUpdate(objectIdBytes, 0, objectIdBytes.Length);
             // hash.update(new Uint8Array([index]));
             digest.Update((byte)index);

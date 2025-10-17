@@ -21,6 +21,21 @@ namespace Sui.Seal
     public abstract class Ciphertext : ISerializable
     {
         public abstract void Serialize(Serialization serializer);
+
+        public static ISerializable Deserialize(Deserialization deserializer)
+        {
+            // Önce varyant indeksini oku.
+            var variantIndex = deserializer.DeserializeU8().Value;
+            switch (variantIndex)
+            {
+                case 0:
+                    return Aes256GcmCiphertext.Deserialize(deserializer);
+                // case 1:
+                //     return Hmac256CtrCiphertext.Deserialize(deserializer);
+                default:
+                    throw new Exception("Unknown Ciphertext variant");
+            }
+        }
     }
 
     public class Aes256GcmCiphertext : Ciphertext
@@ -46,6 +61,21 @@ namespace Sui.Seal
             {
                 serializer.SerializeU8(0); // None(0)
             }
+        }
+
+        public static new ISerializable Deserialize(Deserialization deserializer)
+        {
+            var obj = new Aes256GcmCiphertext();
+
+
+            obj.blob = deserializer.ToBytes();
+
+            var hasAad = deserializer.DeserializeU8().Value; // Option'ı oku (0 veya 1)
+            if (hasAad == 1)
+            {
+                obj.aad = deserializer.ToBytes();
+            }
+            return obj;
         }
     }
 
@@ -89,12 +119,13 @@ namespace Sui.Seal
         public static readonly byte[] Iv =
         {
         138, 55, 153, 253, 198, 46, 121, 219, 160, 128, 89, 7, 214, 156, 148, 220
-    };
+        };
 
         public static Task<byte[]> GenerateAesKey()
         {
-            byte[] keyData = new byte[32];
-            RandomNumberGenerator.Fill(keyData);
+            //byte[] keyData = new byte[32];
+            //RandomNumberGenerator.Fill(keyData);
+            byte[] keyData = {1,1,1,1,1,1,1,1, 1, 1, 1, 1, 1, 1, 1, 1 , 1, 1, 1, 1, 1, 1, 1, 1 , 1, 1, 1, 1, 1, 1, 1, 1 };
             return Task.FromResult(keyData);
         }
 

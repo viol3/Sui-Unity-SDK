@@ -148,8 +148,11 @@ namespace MCL.BLS12_381.Net
     [SymbolName(nameof(mclBnG2_deserialize))]
     public unsafe delegate ulong mclBnG2_deserialize(void* x, void* buf, ulong bufSize);
 
+    [SymbolName(nameof(mclBnG2_getBasePoint))]
+    public unsafe delegate void mclBnG2_getBasePoint(void* p);
+
     /* ====== GT ====== */
-    
+
     [SymbolName(nameof(mclBnGT_clear))]
     public unsafe delegate void mclBnGT_clear(GT* x);
     

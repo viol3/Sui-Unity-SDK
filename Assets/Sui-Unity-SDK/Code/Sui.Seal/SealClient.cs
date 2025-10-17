@@ -44,8 +44,25 @@ namespace Sui.Seal
         public byte[] Aad { get; set; } = new byte[0];
     }
 
+    // Sunucudan dönen JSON'daki "decryption_keys" dizisinin içindeki her bir elemanı temsil eder.
+    public class DecryptionKeyItem
+    {
+        [JsonProperty("id")]
+        public List<byte> Id { get; set; } // Bu, fullId'nin byte dizisi hali
+
+        [JsonProperty("encrypted_key")]
+        public List<string> EncryptedKey { get; set; } // Bu, G1 anahtarlarının Base64 string listesi
+    }
+
+    // Sunucudan dönen JSON'un en dıştaki yapısını temsil eder.
+    public class FetchKeysResponse
+    {
+        [JsonProperty("decryption_keys")]
+        public List<DecryptionKeyItem> DecryptionKeys { get; set; }
+    }
+
     // Şifrelenmiş veriyi paketlemek için kullanılacak sınıf
-    public class EncryptedObject
+    public class EncryptedObject : ISerializable
     {
         public int version = 0;
         public AccountAddress packageId;
@@ -81,6 +98,48 @@ namespace Sui.Seal
 
             this.encryptedShares.Serialize(serializer);
             this.ciphertext.Serialize(serializer);
+        }
+
+        public static ISerializable Deserialize(Deserialization deserializer)
+        {
+            var obj = new EncryptedObject();
+
+            // 1. Version (u8)
+            obj.version = deserializer.DeserializeU8().Value;
+
+            // 2. packageId (AccountAddress)
+            // AccountAddress'in kendi Deserialize metodunu çağırır.
+            obj.packageId = (AccountAddress)AccountAddress.Deserialize(deserializer);
+
+            // 3. id (vector<u8> -> byte[] -> hex string)
+            // Önce vector<u8> olarak okunur, sonra hex string'e çevrilir.
+            byte[] idBytes = deserializer.ToBytes();
+            obj.id = Utils.ToHex(idBytes);
+
+            // 4. services (vector of tuples)
+            // Önce dizinin eleman sayısını oku.
+            int servicesLen = deserializer.DeserializeUleb128();
+            obj.services = new (AccountAddress objectId, int index)[servicesLen];
+            for (int i = 0; i < servicesLen; i++)
+            {
+                // Sırayla her bir tuple elemanını oku.
+                var objectId = (AccountAddress)AccountAddress.Deserialize(deserializer);
+                var index = deserializer.DeserializeU8().Value;
+                obj.services[i] = (objectId, index);
+            }
+
+            // 5. threshold (u8)
+            obj.threshold = deserializer.DeserializeU8().Value;
+
+            // 6. encryptedShares (enum)
+            // IBEEncryptions'ın kendi Deserialize metodunu çağırır.
+            obj.encryptedShares = (IBEEncryptions)IBEEncryptions.Deserialize(deserializer);
+
+            // 7. ciphertext (enum)
+            // Ciphertext'in kendi Deserialize metodunu çağırır.
+            obj.ciphertext = (Ciphertext)Ciphertext.Deserialize(deserializer);
+
+            return obj;
         }
     }
 
@@ -308,24 +367,40 @@ namespace Sui.Seal
                     UnityEngine.Debug.Log(content);
                     httpResponse.EnsureSuccessStatusCode();
 
-                    var jsonResponse = await httpResponse.Content.ReadAsStringAsync();
-                    // Gelen cevabı parse et (Bu kısım sunucunun cevabına göre değişir)
-                    var keyResponse = JObject.Parse(jsonResponse);
+                    var serverResponse = JsonConvert.DeserializeObject<FetchKeysResponse>(content);
 
-                    foreach (var fullId in fullIds)
+                    if (serverResponse?.DecryptionKeys == null)
                     {
-                        if (keyResponse.TryGetValue(fullId, out var keyToken))
+                        UnityEngine.Debug.LogWarning($"Sunucudan 'decryption_keys' dizisi alınamadı.");
+                        continue;
+                    }
+
+                    // 2. 'decryption_keys' dizisindeki her bir eleman için dön
+                    foreach (var keyItem in serverResponse.DecryptionKeys)
+                    {
+                        // 3. 'id' (byte dizisi) alanını hex string'e çevir
+                        string fullId = Utils.ToHex(keyItem.Id.ToArray());
+
+                        // 4. Bu fullId'nin, bizim istediğimiz ID'lerden biri olup olmadığını kontrol et
+                        if (!fullIds.Contains(fullId))
                         {
-                            var keyBytes = Convert.FromBase64String(keyToken.ToString());
-                            var partialKey = G1.FromBytes(keyBytes);
-
-                            // Gelen anahtarın geçerliliğini doğrula (verifyUserSecretKey)
-                            // ...
-
-                            // Anahtarı önbelleğe ekle
-                            AddKeyToCache(fullId, server.objectId, partialKey);
-                            UnityEngine.Debug.Log($"Anahtar {server.objectId} sunucusundan alındı ve önbelleğe eklendi.");
+                            UnityEngine.Debug.LogWarning($"Sunucu {server.objectId} istenmeyen bir anahtar döndürdü: {fullId}");
+                            continue;
                         }
+
+                        // 5. 'encrypted_key' dizisini al. 
+                        //    TS koduna göre bu dizi, o sunucunun o 'fullId' için sahip olduğu
+                        //    parça anahtarları içerir. (Eğer 'weight' > 1 ise birden fazla olabilir).
+                        //    Şimdilik ilkini almamız yeterli.
+                        if (keyItem.EncryptedKey == null || keyItem.EncryptedKey.Count == 0) continue;
+
+                        var keyBase64 = keyItem.EncryptedKey[0]; // Listenin ilk anahtarını alıyoruz
+                        var keyBytes = Convert.FromBase64String(keyBase64);
+                        var partialKey = G1.FromBytes(keyBytes);
+
+                        // 6. Anahtarı önbelleğe ekle
+                        AddKeyToCache(fullId, server.objectId, partialKey);
+                        UnityEngine.Debug.Log($"Anahtar (FullID: {fullId}) {server.objectId} sunucusundan alındı ve önbelleğe eklendi.");
                     }
                 }
             }
@@ -333,7 +408,8 @@ namespace Sui.Seal
 
         public async Task<byte[]> Decrypt(DecryptOptions options)
         {
-            var encryptedObject = JsonConvert.DeserializeObject<EncryptedObject>(Encoding.UTF8.GetString(options.Data), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects });
+            Deserialization deserialization = new Deserialization(options.Data);
+            var encryptedObject = (EncryptedObject)EncryptedObject.Deserialize(deserialization);
             await FetchKeys(
                 new FetchKeysOptions()
                 {
