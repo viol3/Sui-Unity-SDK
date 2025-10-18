@@ -13,7 +13,6 @@ namespace Sui.Seal
 
         public void Serialize(Serialization serializer)
         {
-            // Struct'ın alanlarını sırayla serialize et
             serializer.SerializeFixedBytes(this.nonce);
             serializer.SerializeU8((byte)encryptedShares.Length);
             for (int i = 0; i < encryptedShares.Length; i++)
@@ -22,7 +21,6 @@ namespace Sui.Seal
             }
             
             serializer.SerializeFixedBytes(this.encryptedRandomness);
-            UnityEngine.Debug.Log($"[C#] encryptedRandomness: {Sui.Seal.Utils.ToHex(encryptedRandomness)}");
         }
 
         public static ISerializable Deserialize(Deserialization deserializer)
@@ -30,7 +28,6 @@ namespace Sui.Seal
             var obj = new BonehFranklinBLS12381();
             // Varsayım: nonce her zaman 96 byte, encryptedRandomness her zaman 32 byte.
             obj.nonce = deserializer.FixedBytes(96);
-
             var sharesLen = deserializer.DeserializeU8().Value;
             obj.encryptedShares = new byte[sharesLen][];
             for (int i = 0; i < sharesLen; i++)

@@ -175,6 +175,10 @@ namespace MCL.BLS12_381.Net
             MclBnSetETHserialization.Value.Invoke(1);
         }
 
+        public static void ResetETH()
+        {
+            Imports.MclBnSetETHserialization.Value.Invoke(0);
+        }
 
         Lazy<TDelegate> LazyDelegate<TDelegate>()
         {

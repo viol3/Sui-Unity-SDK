@@ -36,7 +36,6 @@ namespace Sui.Seal
                 // 1. KEM (Key Encapsulation Mechanism) adımı
                 // const [r, nonce, keys] = encapBatched(this.publicKeys, id);
                 var (r, nonce, keys) = EncapBatched(publicKeys, id);
-
                 // 2. DEM (Data Encapsulation Mechanism) adımı
                 // Her bir payı (share) ilgili anahtarla XOR'layarak şifrele.
                 var encryptedShares = new byte[shares.Length][];
@@ -45,10 +44,11 @@ namespace Sui.Seal
                     var key = keys[i];
                     var share = shares[i];
                     var objectId = objectIds[i];
-
                     // xor(share, kdf(keys[i], nonce, id, this.objectIds[i], index))
                     var derivedKey = Kdf.KdfBytes(key, nonce, id, objectId, share.Index);
+                    Debug.Log($"[ENCRYPT-PAIRING-INPUT] publicKey[{i}] (Hex): {Utils.ToHex(publicKeys[i].ToBytes())}");
                     encryptedShares[i] = Utils.Xor(share.Data, derivedKey);
+
                 }
 
                 // 3. Rastgeleliği (randomness 'r') şifrele.
@@ -66,6 +66,7 @@ namespace Sui.Seal
 
                 // d) VerifyNonce'ı çağır
                 bool isNonceValid = VerifyNonce(nonce, r.ToBytes());
+
                 // Sonucu TypeScript'teki yapıyla aynı formatta döndür.
                 return new IBEEncryptions
                 {
@@ -81,6 +82,7 @@ namespace Sui.Seal
             public static byte[] DecryptShare(G2 nonce, G1 sk, byte[] encryptedShare, byte[] id, AccountAddress objectId, int index)
             {
                 var key = GT.Pairing(sk, nonce);
+                UnityEngine.Debug.Log("[DECRYPT] key => " + Utils.ToHex(key.ToBytes()));
                 var derivedKey = Kdf.KdfBytes(key, nonce, id, objectId, index);
                 return Utils.Xor(encryptedShare, derivedKey);
             }
@@ -116,7 +118,6 @@ namespace Sui.Seal
             {
                 // 1. 'randomness'ı skalara (r) dönüştür.
                 var r = DecodeRandomness(randomness, useBE);
-
                 // 2. Jeneratör noktasını bu skalarla çarp (G2.Generator * r).
                 var calculatedNonce = G2.Generator * r;
 
@@ -148,7 +149,7 @@ namespace Sui.Seal
             // const gid_r = hashToG1(id).multiply(r);
             var qId = Kdf.HashToG1(id);
             var gid_r = qId * r;
-
+            Debug.Log($"[ENCRYPT-PAIRING-INPUT] gid_r (Hex): {Utils.ToHex(gid_r.ToBytes())}");
             // return [r, nonce, publicKeys.map((public_key) => gid_r.pairing(public_key))];
             var keys = publicKeys.Select(publicKey => GT.Pairing(gid_r, publicKey)).ToArray();
 

@@ -123,9 +123,9 @@ namespace Sui.Seal
 
         public static Task<byte[]> GenerateAesKey()
         {
-            //byte[] keyData = new byte[32];
-            //RandomNumberGenerator.Fill(keyData);
-            byte[] keyData = {1,1,1,1,1,1,1,1, 1, 1, 1, 1, 1, 1, 1, 1 , 1, 1, 1, 1, 1, 1, 1, 1 , 1, 1, 1, 1, 1, 1, 1, 1 };
+            byte[] keyData = new byte[32];
+            RandomNumberGenerator.Fill(keyData);
+            //byte[] keyData = {1,1,1,1,1,1,1,1, 1, 1, 1, 1, 1, 1, 1, 1 , 1, 1, 1, 1, 1, 1, 1, 1 , 1, 1, 1, 1, 1, 1, 1, 1 };
             return Task.FromResult(keyData);
         }
 

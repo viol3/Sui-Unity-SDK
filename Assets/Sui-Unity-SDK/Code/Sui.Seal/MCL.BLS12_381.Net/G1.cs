@@ -17,7 +17,7 @@ namespace MCL.BLS12_381.Net
             // Some fixed generator can be obtained via hashing any message
             // (all non trivial elements are generators since group has prime order)
             var res = new G1();
-            res.SetHashOf(new byte[] {0xde, 0xad, 0xbe, 0xef});
+            res.SetBytes(new byte[] { 151, 241, 211, 167, 49, 151, 215, 148, 38, 149, 99, 140, 79, 169, 172, 15, 195, 104, 140, 79, 151, 116, 185, 5, 161, 78, 58, 63, 23, 27, 172, 88, 108, 85, 232, 63, 249, 122, 26, 239, 251, 58, 240, 10, 219, 34, 198, 187 });
             return res;
         }
 

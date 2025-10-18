@@ -13,6 +13,7 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace Sui.Seal
 {
@@ -293,6 +294,15 @@ namespace Sui.Seal
                 publicKeys, fullIdBytes, shares, baseKey, options.Threshold, objectIds
             );
 
+            //for (int i = 0; i < ibeEncryptions.BonehFranklinBLS12381.encryptedShares.Length; i++)
+            //{
+            //    UnityEngine.Debug.Log($"[ENCRYPT] encryptedShares[{i}] (Hex): {Utils.ToHex(ibeEncryptions.BonehFranklinBLS12381.encryptedShares[i])}");
+            //}
+            //for (int i = 0; i < objectIds.Length; i++)
+            //{
+            //    UnityEngine.Debug.Log($"[ENCRYPT] objectIds[{i}]: {objectIds[i]}");
+            //}
+
             var demKey = Kdf.DeriveKey(
                 Kdf.KeyPurpose.DEM,
                 baseKey,
@@ -300,7 +310,6 @@ namespace Sui.Seal
                 options.Threshold,
                 objectIds
             );
-
             var ciphertext = await encryptionInput.Encrypt(demKey);
 
             var services = activeKeyServers.Select((ks, i) => (new AccountAddress(ks.objectId), shares[i].Index)).ToArray();
@@ -315,7 +324,6 @@ namespace Sui.Seal
                 encryptedShares = ibeEncryptions,
                 ciphertext = ciphertext,
             };
-
             return (demKey, encryptedObject);
         }
 
@@ -397,7 +405,7 @@ namespace Sui.Seal
                         var keyBase64 = keyItem.EncryptedKey[0]; // Listenin ilk anahtarını alıyoruz
                         var keyBytes = Convert.FromBase64String(keyBase64);
                         var partialKey = G1.FromBytes(keyBytes);
-
+                        UnityEngine.Debug.Log("partial sk => " + Utils.ToHex(keyBytes));
                         // 6. Anahtarı önbelleğe ekle
                         AddKeyToCache(fullId, server.objectId, partialKey);
                         UnityEngine.Debug.Log($"Anahtar (FullID: {fullId}) {server.objectId} sunucusundan alındı ve önbelleğe eklendi.");
@@ -425,7 +433,7 @@ namespace Sui.Seal
             }
 
             var fullId = Utils.ToHex(Utils.Flatten(encryptedObject.packageId.KeyBytes, Utils.FromHex(encryptedObject.id)));
-
+            
             // Önbelleğimizde bu 'fullId' için anahtarı olan sunucuları bul
             var availableServices = encryptedObject.services
                 .Where(s => cachedKeys.ContainsKey($"{fullId}:{s.objectId}"))
@@ -440,30 +448,33 @@ namespace Sui.Seal
             var encryptedShares = ibeData.encryptedShares;
             var nonce = G2.FromBytes(ibeData.nonce);
             var fullIdBytes = Utils.FromHex(fullId);
-
             // 1. Adım: Mevcut anahtarlarla şifreli payları (shares) çöz
             var shares = availableServices.Select(service =>
             {
                 var (objectId, index) = service;
                 var sk = cachedKeys[$"{fullId}:{objectId}"];
-
+                UnityEngine.Debug.Log($"[DECRYPT-PAIRING-INPUT] sk (objectId: {Utils.ToHex(objectId.KeyBytes)}, index: {index}) (Hex): {Utils.ToHex(sk.ToBytes())}");
+                UnityEngine.Debug.Log($"[DECRYPT-PAIRING-INPUT] nonce (objectId: {Utils.ToHex(objectId.KeyBytes)}, index: {index}) (Hex): {Utils.ToHex(nonce.ToBytes())}");
                 int serviceIndex = Array.FindIndex(encryptedObject.services, s => s.objectId == objectId && s.index == index);
                 var encryptedShare = encryptedShares[serviceIndex];
-
                 var shareData = Ibe.BonehFranklin.DecryptShare(nonce, sk, encryptedShare, fullIdBytes, objectId, index);
                 return new Share { Index = index, Data = shareData };
             }).ToList();
 
             // 2. Adım: Çözülmüş payları birleştirerek "baseKey"i yeniden oluştur
             var baseKey = Shamir.Combine(shares.ToArray());
-
+            
             // 3. Adım: "randomnessKey"i türet ve randomness'ı çöz
             var allObjectIds = encryptedObject.services.Select(s => s.objectId).ToArray();
             var randomnessKey = Kdf.DeriveKey(Kdf.KeyPurpose.EncryptedRandomness, baseKey, encryptedShares, encryptedObject.threshold, allObjectIds);
             var randomness = Utils.Xor(ibeData.encryptedRandomness, randomnessKey);
-
-            // 4. Adım: Nonce'ı doğrula
             var r = Fr.FromBytes(randomness);
+
+            UnityEngine.Debug.Log("[DECRYPT DERIVE_KEY_INPUT] === Başlangıç ===");
+            UnityEngine.Debug.Log($"[DECRYPT DERIVE_KEY_INPUT] baseKey (Hex): {Utils.ToHex(baseKey)}");
+            UnityEngine.Debug.Log("[DECRYPT DERIVE_KEY_INPUT] === Bitiş ===");
+
+
             if (!(G2.Generator * r).Equals(nonce))
             {
                 throw new CryptographicException("Invalid nonce, decryption failed.");
