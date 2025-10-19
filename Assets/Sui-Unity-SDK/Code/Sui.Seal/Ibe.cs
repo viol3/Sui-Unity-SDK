@@ -49,6 +49,11 @@ namespace Sui.Seal
                 // 1. KEM (Key Encapsulation Mechanism) adımı
                 // const [r, nonce, keys] = encapBatched(this.publicKeys, id);
                 var (r, nonce, keys) = EncapBatched(publicKeys, id);
+                for (int i = 0; i < keys.Length; i++)
+                {
+                    byte[] keyBytes = keys[i].ToBytes();
+                    Debug.Log("passing");
+                }
                 // 2. DEM (Data Encapsulation Mechanism) adımı
                 // Her bir payı (share) ilgili anahtarla XOR'layarak şifrele.
                 var encryptedShares = new byte[shares.Length][];
@@ -151,13 +156,22 @@ namespace Sui.Seal
             }
 
             // const r = Scalar.random();
-            var r = Fr.GetRandom();
-            //var r = Fr.FromBytes(new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x30, 0x31, 0x32 });
+            //var r = Fr.GetRandom();
+            //byte[] rBytes = r.ToBytes();
+            var r = Fr.FromBytes(new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20 });
             // const nonce = G2Element.generator().multiply(r);
             var nonce = G2.Generator * r;
+            var nonceBytes = nonce.ToBytes();
+            var generatorBytes = G2.Generator.ToBytes();
+
+            Debug.Log("[C#] r => " + Utils.ToHex(r.ToBytes()));
+            Debug.Log("[C#] nonce => " + Utils.ToHex(nonce.ToBytes()));
+            Debug.Log("[C#] generatorBytes => " + Utils.ToHex(generatorBytes));
             // const gid_r = hashToG1(id).multiply(r);
             var qId = Kdf.HashToG1(id);
+            byte[] qIdBytes = qId.ToBytes();
             var gid_r = qId * r;
+            byte[] gid_rBytes = gid_r.ToBytes();
             // return [r, nonce, publicKeys.map((public_key) => gid_r.pairing(public_key))];
             var keys = publicKeys.Select(publicKey => GT.Pairing(gid_r, publicKey)).ToArray();
             return (r, nonce, keys);

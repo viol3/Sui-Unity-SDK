@@ -41,6 +41,7 @@ namespace MCL.BLS12_381.Net
         internal readonly Lazy<mclBnG1_deserialize> MclBnG1Deserialize;
         internal readonly Lazy<mclBnG1_getStr> MclBnG1GetStr;
         internal readonly Lazy<mclBnG1_hashAndMapTo> MclBnG1HashAndMapTo;
+        internal readonly Lazy<mclBnG1_setDst> MclBnG1SetDST;
 
         internal readonly Lazy<mclBnG2_clear> MclBnG2Clear;
         internal readonly Lazy<mclBnG2_isValid> MclBnG2IsValid;
@@ -126,6 +127,7 @@ namespace MCL.BLS12_381.Net
             MclBnG1Deserialize = LazyDelegate<mclBnG1_deserialize>();
             MclBnG1GetStr = LazyDelegate<mclBnG1_getStr>();
             MclBnG1HashAndMapTo = LazyDelegate<mclBnG1_hashAndMapTo>();
+            MclBnG1SetDST = LazyDelegate<mclBnG1_setDst>();
 
             MclBnG2Clear = LazyDelegate<mclBnG2_clear>();
             MclBnG2IsValid = LazyDelegate<mclBnG2_isValid>();
@@ -178,6 +180,11 @@ namespace MCL.BLS12_381.Net
         public static void ResetETH()
         {
             Imports.MclBnSetETHserialization.Value.Invoke(0);
+        }
+
+        public static void SetDST(string dst)
+        {
+            Imports.MclBnG1SetDST.Value.Invoke(dst, (ulong)dst.Length);
         }
 
         Lazy<TDelegate> LazyDelegate<TDelegate>()

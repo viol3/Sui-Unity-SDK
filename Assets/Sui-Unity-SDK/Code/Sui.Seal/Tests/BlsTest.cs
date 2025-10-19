@@ -41,10 +41,27 @@ public class BlsTest : MonoBehaviour
         Debug.Log("Sui Address => " + _account.SuiAddress());
         //byte[] nonce = Utils.GenerateNonce();
         _policyId = Sui.Seal.Utils.CreatePolicyId(_account.SuiAddress().KeyHex, _nonceBytes);
+        //DeepTest();
         RunAllTests();
         //TestSignPersonalMessage();
         //await DecryptTest();
         //TestBCSSerialization();
+    }
+
+    void DeepTest()
+    {
+        byte[] baseKey = { 29, 98, 182, 49, 245, 116, 154, 199, 140, 231, 84, 150, 24, 161, 48, 220, 94, 254, 157, 74, 229, 50, 70, 27, 13, 222, 94, 115, 106, 106, 64, 200 };
+        Share[] shares = Shamir.Split(baseKey, 2, 2);
+        var encryptOptions = new EncryptOptions
+        {
+            Threshold = 2,
+            PackageId = new AccountAddress(_packageId), // Hex string
+            Id = Sui.Seal.Utils.ToHex(_policyId),         // Hex string
+            Data = Encoding.UTF8.GetBytes("myspecialmessage")
+        };
+        var fullId = Sui.Seal.Utils.ToHex(Sui.Seal.Utils.Flatten(encryptOptions.PackageId.KeyBytes, Sui.Seal.Utils.FromHex(encryptOptions.Id)));
+        Debug.Log("fullId => " + fullId);
+        Debug.Log("Deep Test over");
     }
 
     private void TestBCSSerialization()

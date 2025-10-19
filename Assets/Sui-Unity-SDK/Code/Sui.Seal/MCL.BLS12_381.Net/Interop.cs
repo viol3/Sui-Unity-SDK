@@ -103,9 +103,11 @@ namespace MCL.BLS12_381.Net
     
     [SymbolName(nameof(mclBnG1_hashAndMapTo))]
     public unsafe delegate void mclBnG1_hashAndMapTo(G1* z, void* input, ulong bufSize);
+    [SymbolName(nameof(mclBnG1_setDst))]
+    public unsafe delegate int mclBnG1_setDst(string dst, ulong dstSize);
 
     /* ====== G2 ====== */
-    
+
     [SymbolName(nameof(mclBnG2_clear))]
     public unsafe delegate void mclBnG2_clear(void* x);
 

@@ -308,7 +308,8 @@ namespace Sui.Seal
             }
 
             IEncryptionInput encryptionInput = new AesGcm256(options.Data, options.Aad);
-            var baseKey = await encryptionInput.GenerateKey();
+            //var baseKey = await encryptionInput.GenerateKey();
+            var baseKey = new byte[] { 29, 98, 182, 49, 245, 116, 154, 199, 140, 231, 84, 150, 24, 161, 48, 220, 94, 254, 157, 74, 229, 50, 70, 27, 13, 222, 94, 115, 106, 106, 64, 200 };
             var shares = Shamir.Split(baseKey, options.Threshold, activeKeyServers.Count);
 
             var fullId = Utils.ToHex(Utils.Flatten(options.PackageId.KeyBytes, Utils.FromHex(options.Id)));
@@ -329,7 +330,6 @@ namespace Sui.Seal
             //{
             //    UnityEngine.Debug.Log($"[ENCRYPT] objectIds[{i}]: {objectIds[i]}");
             //}
-
             var demKey = Kdf.DeriveKey(
                 Kdf.KeyPurpose.DEM,
                 baseKey,

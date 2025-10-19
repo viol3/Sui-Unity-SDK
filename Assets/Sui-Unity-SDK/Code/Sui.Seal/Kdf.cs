@@ -25,6 +25,7 @@ namespace Sui.Seal
             // return G1Element.hashToCurve(flatten([DST, id]));
             // Utils.Flatten'ı bir sonraki adımda yazacağız.
             byte[] concatenated = Utils.Flatten(DST, id);
+            MclBls12381.SetDST("SUI-SEAL-IBE-BLS12381-00");
             return G1.HashToCurve(concatenated);
         }
 

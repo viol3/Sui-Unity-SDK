@@ -18,7 +18,6 @@ namespace Sui.Seal
         private const int GF256_SIZE = 256;
 
         #region Lookup Tables (EXP ve LOG)
-        // Bu tablolar bir önceki adımdan...
         private static readonly byte[] EXP = { 0x01, 0x03, 0x05, 0x0f, 0x11, 0x33, 0x55, 0xff, 0x1a, 0x2e, 0x72, 0x96, 0xa1, 0xf8, 0x13, 0x35,
     0x5f, 0xe1, 0x38, 0x48, 0xd8, 0x73, 0x95, 0xa4, 0xf7, 0x02, 0x06, 0x0a, 0x1e, 0x22, 0x66, 0xaa,
     0xe5, 0x34, 0x5c, 0xe4, 0x37, 0x59, 0xeb, 0x26, 0x6a, 0xbe, 0xd9, 0x70, 0x90, 0xab, 0xe6, 0x31,
@@ -192,13 +191,13 @@ namespace Sui.Seal
         private static Polynomial SamplePolynomial(GF256 constant, int degree)
         {
             var randomCoefficients = new byte[degree];
-
+            randomCoefficients = new byte[] { 20 };
             // 1. Kriptografik olarak güvenli bir rastgele sayı üreteci nesnesi oluşturuyoruz.
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                // 2. Bu nesnenin 'GetBytes' metodunu kullanarak dizimizi dolduruyoruz.
-                rng.GetBytes(randomCoefficients);
-            }
+            //using (var rng = RandomNumberGenerator.Create())
+            //{
+            //    // 2. Bu nesnenin 'GetBytes' metodunu kullanarak dizimizi dolduruyoruz.
+            //    rng.GetBytes(randomCoefficients);
+            //}
 
             var coeffs = new List<GF256> { constant };
             coeffs.AddRange(randomCoefficients.Select(b => new GF256(b)));
