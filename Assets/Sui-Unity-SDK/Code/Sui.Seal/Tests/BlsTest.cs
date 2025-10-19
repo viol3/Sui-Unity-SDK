@@ -28,7 +28,7 @@ public class BlsTest : MonoBehaviour
 {
     SuiClient _suiClient;
     Account _account;
-    string _objectIdToDecrypt = "0x85dc4f6ef5485e27750ce2651ac7f988aa8c09383b45508c4ca7e626269e4900";
+    string _objectIdToDecrypt = "0x05c7af488251a84cf8f4b975b164c7fe75be251f5387e79c74693e0706ef2334";
     string _packageId = "0xf3dfe70b4916fecaecf7928bb8221031c28d5130c66e8fa7e645ce8785846f91";
     string _moduleName = "private_data";
     string _funcName = "store_entry";
@@ -118,10 +118,57 @@ public class BlsTest : MonoBehaviour
     private async void RunAllTests()
     {
         Debug.Log("====== TÜM TESTLER BAŞLATILIYOR (PLATFORM: WINDOWS/EDITOR) ======");
-        
+
+        //Debug.Log("--- G1/G2 FromBytes Roundtrip Test ---");
+        //try
+        //{
+        //    // Ensure ETH mode is set as it would be during Decrypt
+        //    // If you made it permanently on at Start(), you don't need this line.
+        //    // MCL_Imports.mclBn_setETHserialization(1); // Or 0, depending on your setup
+
+        //    // Test G1
+        //    var originalG1 = G1.Generator * Fr.GetRandom(); // Create a random G1 point
+        //    var g1Bytes = originalG1.ToBytes();
+        //    var reconstructedG1 = G1.FromBytes(g1Bytes);
+        //    if (!originalG1.Equals(reconstructedG1))
+        //    {
+        //        Debug.LogError("G1 FromBytes Roundtrip FAILED!");
+        //        Debug.Log($"Original G1: {Sui.Seal.Utils.ToHex(g1Bytes)}");
+        //        // It might be useful to log the internal struct values if possible
+        //    }
+        //    else
+        //    {
+        //        Debug.Log("G1 FromBytes Roundtrip SUCCESSFUL.");
+        //    }
+
+        //    // Test G2
+        //    var originalG2 = G2.Generator * Fr.GetRandom(); // Create a random G2 point
+        //    var g2Bytes = originalG2.ToBytes();
+        //    var reconstructedG2 = G2.FromBytes(g2Bytes);
+        //    if (originalG2 == reconstructedG2)
+        //    {
+        //        Debug.Log("G2 FromBytes Roundtrip SUCCESSFUL.");
+        //    }
+        //    else
+        //    {
+        //        Debug.LogError("G2 FromBytes Roundtrip FAILED!");
+        //        Debug.Log($"Original G2: {Sui.Seal.Utils.ToHex(g2Bytes)}");
+        //    }
+        //    Debug.Log("--- Roundtrip Test End ---");
+        //}
+        //catch (Exception ex)
+        //{
+        //    Debug.LogError($"Roundtrip Test Exception: {ex}");
+        //}
+        //finally
+        //{
+        //    // Ensure ETH mode is back to what Decrypt expects if you changed it
+        //    // MCL_Imports.mclBn_setETHserialization(0); // Or 1
+        //}
+        //TestIsolatedPairingConsistency();
         EncryptedObject encryptedObject = await TestSealClientEncrypt();
 
-        await DecryptTest(encryptedObject);
+
         //var serializer = new Serialization();
         //encryptedObject.Serialize(serializer);
         //byte[] encryptedBytes = serializer.GetBytes();
@@ -140,6 +187,70 @@ public class BlsTest : MonoBehaviour
         //);
         //await _suiClient.SignAndExecuteTransactionBlockAsync(tx_block, _account);
         //Debug.Log("====== TÜM TESTLER TAMAMLANDI ======");
+        await DecryptTest(encryptedObject);
+    }
+
+    private void TestIsolatedPairingConsistency()
+    {
+        Debug.Log("--- İzole Pairing Tutarlılık Testi Başlatılıyor ---");
+        try
+        {
+            // ETH modunun Decrypt sırasında olduğu gibi ayarlandığından emin ol
+            // (Eğer Start'ta kalıcı açtıysan bu satıra gerek yok)
+            // MCL_Imports.mclBn_setETHserialization(1); // VEYA 0
+
+            // 1. Sabit Girdiler Oluştur
+            var msk = new Fr(); msk.SetInt(123); // Sabit master secret key
+            var r = new Fr(); r.SetInt(456);     // Sabit randomness
+            var id = Encoding.UTF8.GetBytes("test-id-for-pairing");
+
+            // 2. Gerekli Noktaları Hesapla
+            var publicKey = G2.Generator * msk;         // G2
+            var qId = Kdf.HashToG1(id);                 // G1
+            var gid_r = qId * r;                        // G1
+            var nonce = G2.Generator * r;               // G2
+            var sk = qId * msk;                         // G1 (fetchKeys simülasyonu)
+
+            Debug.Log($"[ISOLATED] msk: {msk}");
+            Debug.Log($"[ISOLATED] r: {r}");
+            Debug.Log($"[ISOLATED] publicKey (Hex): {Sui.Seal.Utils.ToHex(publicKey.ToBytes())}");
+            Debug.Log($"[ISOLATED] qId (Hex): {Sui.Seal.Utils.ToHex(qId.ToBytes())}");
+            Debug.Log($"[ISOLATED] gid_r (Hex): {Sui.Seal.Utils.ToHex(gid_r.ToBytes())}");
+            Debug.Log($"[ISOLATED] nonce (Hex): {Sui.Seal.Utils.ToHex(nonce.ToBytes())}");
+            Debug.Log($"[ISOLATED] sk (Hex): {Sui.Seal.Utils.ToHex(sk.ToBytes())}");
+
+            // 3. İki Farklı Pairing İşlemini Yap
+            Debug.Log("Pairing 1 (Encrypt gibi): GT.Pairing(gid_r, publicKey)");
+            var pairingResultEncrypt = GT.Pairing(gid_r, publicKey);
+            var encryptBytes = pairingResultEncrypt.ToBytes();
+
+            Debug.Log("Pairing 2 (Decrypt gibi): GT.Pairing(sk, nonce)");
+            var pairingResultDecrypt = GT.Pairing(sk, nonce);
+            var decryptBytes = pairingResultDecrypt.ToBytes();
+
+            // 4. Sonuçları Karşılaştır
+            Debug.Log($"[ISOLATED] Pairing Encrypt Sonucu (Hex): {Sui.Seal.Utils.ToHex(encryptBytes)}");
+            Debug.Log($"[ISOLATED] Pairing Decrypt Sonucu (Hex): {Sui.Seal.Utils.ToHex(decryptBytes)}");
+
+            if (Sui.Seal.Utils.AreEqual(encryptBytes, decryptBytes))
+            {
+                Debug.Log("<color=green>İzole Pairing Tutarlılık Testi: BAŞARILI! Sonuçlar aynı.</color>");
+            }
+            else
+            {
+                Debug.LogError("<color=red>İzole Pairing Tutarlılık Testi: BAŞARISIZ! Sonuçlar farklı.</color>");
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("<color=red>--- İzole Pairing Testi BAŞARISIZ (Exception) ---</color>");
+            Debug.LogException(e);
+        }
+        finally
+        {
+            // ETH modunu eski haline getir (eğer başta değiştirdiysen)
+            // MCL_Imports.mclBn_setETHserialization(0); // VEYA 1
+        }
     }
 
     private void TestSignPersonalMessage()
@@ -162,7 +273,6 @@ public class BlsTest : MonoBehaviour
 
         // 2. SealClient'ı başlat
         var client = new SealClient(options);
-        Debug.Log("SealClient başarıyla oluşturuldu.");
         await client.InitializeAsync();
         var sessionKey = await SessionKey.Create(_account.SuiAddress().ToHex(), _packageId, 10);
         SignatureWithBytes signatureWithBytes = _account.SignPersonalMessage(sessionKey.GetPersonalMessage());
@@ -189,10 +299,6 @@ public class BlsTest : MonoBehaviour
         //tx_block.SetSender(_account);
         var txBytes = await tx_block.Build(new BuildOptions(_suiClient, null, true, null));
         var txBytesForServer = txBytes.Skip(1).ToArray();
-        Debug.Log("--------- C# DEBUG BAŞLANGIÇ ---------");
-        Debug.Log($"C# txBytes UZUNLUK: {txBytesForServer.Length}");
-        Debug.Log($"C# txBytes (HEX): {Sui.Seal.Utils.ToHex(txBytesForServer)}");
-        Debug.Log("--------- C# DEBUG BİTİŞ ---------");
 
         var decryptOptions = new DecryptOptions
         {

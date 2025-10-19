@@ -1,4 +1,5 @@
-﻿using OpenDive.BCS;
+﻿using MCL.BLS12_381.Net;
+using OpenDive.BCS;
 using System;
 using System.Linq;
 using System.Numerics;
@@ -10,6 +11,12 @@ namespace Sui.Seal
         public byte[] nonce;
         public byte[][] encryptedShares;
         public byte[] encryptedRandomness;
+
+        /// <summary>
+        /// Verilen parça sır anahtarının (usk), belirtilen kimlik (id) ve
+        /// sunucu genel anahtarı (pk) için geçerli olup olmadığını doğrular.
+        /// Denklem: e(usk, G2.Generator) == e(H(id), pk)
+        /// </summary>
 
         public void Serialize(Serialization serializer)
         {

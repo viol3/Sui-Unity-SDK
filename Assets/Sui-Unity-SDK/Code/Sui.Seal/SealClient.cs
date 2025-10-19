@@ -13,6 +13,7 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEditor.PackageManager;
 using UnityEngine;
 
 namespace Sui.Seal
@@ -159,6 +160,29 @@ namespace Sui.Seal
         public int Threshold { get; set; }
     }
 
+    public class FetchKeysRequest
+    {
+        // JSON'daki "ptb" alanına karşılık gelir
+        [JsonProperty("ptb")]
+        public string Ptb { get; set; } // Base64 formatında, ilk byte'ı atılmış txBytes
+
+        // JSON'daki "enc_key" alanına karşılık gelir
+        [JsonProperty("enc_key")]
+        public string EncKeyPk { get; set; } // Base64 formatında
+
+        // JSON'daki "enc_verification_key" alanına karşılık gelir
+        [JsonProperty("enc_verification_key")]
+        public string EncVerificationKey { get; set; } // Base64 formatında
+
+        // JSON'daki "request_signature" alanına karşılık gelir
+        [JsonProperty("request_signature")]
+        public string RequestSignature { get; set; } // Base64 formatında
+
+        // JSON'daki "certificate" alanına karşılık gelir
+        [JsonProperty("certificate")]
+        public Certificate Certificate { get; set; } // Certificate nesnesinin kendisi
+    }
+
     public class SealClient
     {
         private readonly SuiClient suiClient;
@@ -167,6 +191,8 @@ namespace Sui.Seal
 
         private readonly Dictionary<string, KeyServer> keyServers;
         private readonly Dictionary<string, G1> cachedKeys = new Dictionary<string, G1>();
+
+        private readonly int totalWeight;
 
         private const ulong EXPECTED_SERVER_VERSION = 1;
         public SealClient(SealClientOptions options)
@@ -178,6 +204,7 @@ namespace Sui.Seal
             this.suiClient = options.SuiClient;
             this.serverConfigs = options.ServerConfigs;
             this.keyServers = new Dictionary<string, KeyServer>();
+            this.totalWeight = options.ServerConfigs.Sum(c => c.weight);
         }
 
         public async Task InitializeAsync()
@@ -286,7 +313,7 @@ namespace Sui.Seal
 
             var fullId = Utils.ToHex(Utils.Flatten(options.PackageId.KeyBytes, Utils.FromHex(options.Id)));
             var fullIdBytes = Utils.FromHex(fullId);
-
+           
             var publicKeys = activeKeyServers.Select(ks => G2.FromBytes(ks.pk)).ToArray();
             var objectIds = activeKeyServers.Select(ks => new AccountAddress(ks.objectId)).ToArray();
 
@@ -325,6 +352,208 @@ namespace Sui.Seal
                 ciphertext = ciphertext,
             };
             return (demKey, encryptedObject);
+        }
+
+        private int GetWeight(string objectId)
+        {
+            return serverConfigs.FirstOrDefault(c => c.objectId == objectId)?.weight ?? 0;
+        }
+
+        public async Task FetchKeysNew(FetchKeysOptions options)
+        {
+            // 1. Threshold Kontrolü
+            if (options.Threshold > totalWeight || options.Threshold < 1)
+                throw new ArgumentException($"Invalid threshold {options.Threshold} for total weight {totalWeight}");
+
+            // 2. Full ID'leri Hesapla
+            //    Not: options.Ids'in null veya boş olmaması kontrolü eklenebilir.
+            var fullIds = options.Ids.Select(id =>
+                Utils.ToHex(Utils.Flatten(Utils.FromHex(options.SessionKey.GetPackageId()), Utils.FromHex(id)))
+            ).Distinct().ToArray(); // Benzersiz ID'leri al
+
+            if (fullIds.Length == 0) return; // İstenecek ID yoksa çık
+
+            // 3. Önbelleği Kontrol Et ve Kalan Sunucuları Belirle
+            int completedWeight = 0;
+            var remainingServerObjectIds = new List<string>();
+            int remainingServersWeight = 0; // Hata durumunda erken çıkmak için
+
+            if (this.keyServers.Count == 0) await InitializeAsync(); // Henüz başlatılmadıysa başlat
+
+            foreach (var objectId in keyServers.Keys)
+            {
+                // Bu sunucu, istenen TÜM fullId'ler için önbellekte anahtara sahip mi?
+                if (fullIds.All(fullId => cachedKeys.ContainsKey($"{fullId}:{objectId}")))
+                {
+                    int weight = GetWeight(objectId);
+                    completedWeight += weight;
+                }
+                else
+                {
+                    int weight = GetWeight(objectId);
+                    remainingServerObjectIds.Add(objectId);
+                    remainingServersWeight += weight;
+                }
+            }
+
+            // 4. Yeterli Anahtar Önbellekteyse Erken Çık
+            if (completedWeight >= options.Threshold)
+            {
+                UnityEngine.Debug.Log($"FetchKeys: Gerekli threshold ({options.Threshold}) önbellekten sağlandı ({completedWeight}). Sunucuya gidilmeyecek.");
+                return;
+            }
+
+            UnityEngine.Debug.Log($"FetchKeys: Önbellekte {completedWeight}/{options.Threshold} ağırlık bulundu. {remainingServerObjectIds.Count} sunucudan anahtar istenecek.");
+
+            // 5. İstek İçin Gerekli Verileri Hazırla
+            var myCertificate = options.SessionKey.GetCertificate();
+            // CreateRequestParams artık SignedRequestParams döndürüyor ve async olabilir
+            var requestParams = options.SessionKey.CreateRequestParams(options.TxBytes);
+            var errors = new List<Exception>();
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.DefaultRequestHeaders.Add("Client-Sdk-Version", "0.8.6"); // Güncel tutulmalı
+                httpClient.DefaultRequestHeaders.Add("Client-Sdk-Type", "typescript");
+                // 6. Kalan Sunuculara SIRAYLA İstek Gönder
+                foreach (var objectId in remainingServerObjectIds)
+                {
+                    // Her döngü başında yeterli anahtar toplandıysa çık (önceki sunucu tamamlamış olabilir)
+                    if (completedWeight >= options.Threshold) break;
+
+                    // Threshold artık ulaşılamaz durumdaysa erken çık (TS'deki finally bloğu mantığı)
+                    if (remainingServersWeight < options.Threshold - completedWeight)
+                    {
+                        UnityEngine.Debug.LogWarning($"FetchKeys: Kalan sunucularla threshold'a ulaşılamıyor ({remainingServersWeight} < {options.Threshold - completedWeight}). İşlem durduruluyor.");
+                        // Hata fırlatmak yerine sadece döngüden çıkabiliriz, son kontrol yapılacak.
+                        break;
+                    }
+
+                    var server = keyServers[objectId];
+                    string requestId = Guid.NewGuid().ToString();
+
+                    try
+                    {
+                        UnityEngine.Debug.Log($"{server.url}/v1/fetch_key adresinden anahtar isteniyor (RequestId: {requestId})...");
+                        
+                        var requestBody = new FetchKeysRequest
+                        {
+                            Ptb = Convert.ToBase64String(options.TxBytes),
+                            EncKeyPk = Convert.ToBase64String(requestParams.EncKeyPk),
+                            EncVerificationKey = Convert.ToBase64String(requestParams.EncVerificationKey),
+                            RequestSignature = requestParams.RequestSignature,
+                            Certificate = myCertificate,
+                        };
+                        var jsonContent = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
+
+                        // İsteğe özel Request-Id ekle (DefaultHeaders yerine burada eklemek daha doğru olabilir)
+                        using (var requestMessage = new HttpRequestMessage(HttpMethod.Post, server.url + "/v1/fetch_key"))
+                        {
+                            requestMessage.Headers.TryAddWithoutValidation("Request-Id", requestId);
+                            // İsteğe bağlı API Key header'ları da burada eklenebilir (TS'deki gibi)
+                            // var config = serverConfigs.FirstOrDefault(c=> c.objectId == objectId);
+                            // if (config?.apiKeyName != null && config?.apiKey != null) { ... }
+                            requestMessage.Content = jsonContent;
+
+                            var httpResponse = await httpClient.SendAsync(requestMessage); // SendAsync kullan
+                            string content = await httpResponse.Content.ReadAsStringAsync();
+
+                            if (!httpResponse.IsSuccessStatusCode)
+                            {
+                                throw new HttpRequestException($"Sunucu {objectId} Hata Döndü ({httpResponse.StatusCode}) - RequestId: {requestId}: {content}");
+                            }
+
+                            var serverResponse = JsonConvert.DeserializeObject<FetchKeysResponse>(content);
+                            if (serverResponse?.DecryptionKeys == null)
+                            {
+                                UnityEngine.Debug.LogWarning($"Sunucu {objectId} 'decryption_keys' dizisi döndürmedi.");
+                                continue; // Bir sonraki sunucuya geç
+                            }
+
+                            bool serverCompletedThisRequest = true; // Bu sunucu istediğimiz tüm anahtarları verdi mi?
+                            foreach (var keyItem in serverResponse.DecryptionKeys)
+                            {
+                                string fullId = Utils.ToHex(keyItem.Id.ToArray());
+                                if (!fullIds.Contains(fullId)) continue;
+
+                                // Bu fullId için zaten cache'de anahtar varsa tekrar işlem yapma
+                                if (cachedKeys.ContainsKey($"{fullId}:{objectId}")) continue;
+
+                                if (keyItem.EncryptedKey == null || keyItem.EncryptedKey.Count == 0)
+                                {
+                                    serverCompletedThisRequest = false; // Bu ID için anahtar gelmedi
+                                    continue;
+                                }
+
+                                bool validKeyFoundForThisId = false;
+                                foreach (var keyBase64 in keyItem.EncryptedKey)
+                                {
+                                    G1 partialKey;
+                                    try
+                                    {
+                                        var keyBytes = Convert.FromBase64String(keyBase64);
+                                        partialKey = G1.FromBytes(keyBytes);
+                                    }
+                                    catch(Exception ex)
+                                    {
+                                        UnityEngine.Debug.LogError("partial key error!! => " + ex.Message);
+                                        continue; 
+                                    } // Geçersiz anahtarı atla
+
+                                    // ANAHTAR DOĞRULAMA
+                                    var serverPublicKey = G2.FromBytes(server.pk);
+                                    if (!Ibe.BonehFranklin.VerifyUserSecretKey(partialKey, fullId, serverPublicKey))
+                                    {
+                                        UnityEngine.Debug.LogWarning($"Sunucu {objectId} tarafından {fullId} için geçersiz anahtar alındı.");
+                                        continue; // Bu anahtarı atla, listedeki diğerine bak
+                                    }
+
+                                    // Doğrulama BAŞARILI!
+                                    AddKeyToCache(fullId, objectId, partialKey);
+                                    UnityEngine.Debug.Log($"Anahtar (FullID: {fullId}) {server.objectId} sunucusundan alındı ve doğrulandı.");
+                                    validKeyFoundForThisId = true;
+                                    break; // Bu fullId için geçerli anahtar bulundu, iç döngüden çık
+                                }
+
+                                // Eğer iç döngü bittiğinde bu fullId için geçerli anahtar bulunamadıysa
+                                if (!validKeyFoundForThisId)
+                                {
+                                    serverCompletedThisRequest = false;
+                                }
+
+                            } // foreach keyItem bitti
+
+                            // Eğer bu sunucu istenen TÜM fullId'ler için GEÇERLİ anahtar verdiyse, ağırlığını ekle
+                            if (serverCompletedThisRequest && fullIds.All(fullId => cachedKeys.ContainsKey($"{fullId}:{server.objectId}")))
+                            {
+                                int weight = GetWeight(objectId);
+                                completedWeight += weight;
+                                UnityEngine.Debug.Log($"Sunucu {objectId} tamamlandı. Toplam Ağırlık: {completedWeight}/{options.Threshold}");
+                                // Yeterli anahtar toplandıysa dış döngüden çıkmak için bir sonraki iterasyonda break tetiklenecek.
+                            }
+                        } // using requestMessage bitti
+                    } // try bitti
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogError($"Sunucu {objectId} ile iletişimde hata (RequestId: {requestId}): {ex.Message}");
+                        errors.Add(ex);
+                    }
+                    finally // TS'deki finally mantığı
+                    {
+                        int weight = GetWeight(objectId);
+                        remainingServersWeight -= weight;
+                    }
+
+                } // foreach server bitti
+            } // using httpClient bitti
+
+            // 7. Son Threshold Kontrolü
+            if (completedWeight < options.Threshold)
+            {
+                // Hataları birleştirerek fırlat (TS'deki toMajorityError gibi)
+                var errorMessages = string.Join("; ", errors.Select(e => e.Message));
+                throw new Exception($"Yeterli anahtar toplanamadı ({completedWeight}/{options.Threshold}). Hatalar: {errorMessages}");
+            }
+            UnityEngine.Debug.Log($"FetchKeys başarıyla tamamlandı. Toplam {completedWeight} ağırlıkta anahtar toplandı.");
         }
 
         public async Task FetchKeys(FetchKeysOptions options)
@@ -388,7 +617,6 @@ namespace Sui.Seal
                     {
                         // 3. 'id' (byte dizisi) alanını hex string'e çevir
                         string fullId = Utils.ToHex(keyItem.Id.ToArray());
-
                         // 4. Bu fullId'nin, bizim istediğimiz ID'lerden biri olup olmadığını kontrol et
                         if (!fullIds.Contains(fullId))
                         {
@@ -405,7 +633,65 @@ namespace Sui.Seal
                         var keyBase64 = keyItem.EncryptedKey[0]; // Listenin ilk anahtarını alıyoruz
                         var keyBytes = Convert.FromBase64String(keyBase64);
                         var partialKey = G1.FromBytes(keyBytes);
-                        UnityEngine.Debug.Log("partial sk => " + Utils.ToHex(keyBytes));
+
+                        UnityEngine.Debug.Log($"Sunucu {server.objectId} için {keyItem.EncryptedKey.Count} adet anahtar döndü.");
+                        if (keyItem.EncryptedKey.Count > 1)
+                        {
+                            var key1Bytes = Convert.FromBase64String(keyItem.EncryptedKey[0]);
+                            var key2Bytes = Convert.FromBase64String(keyItem.EncryptedKey[1]);
+                            bool areKeysIdentical = Utils.AreEqual(key1Bytes, key2Bytes);
+                            UnityEngine.Debug.Log($"---> İkinci anahtar var! İlk anahtarla aynı mı? {areKeysIdentical}");
+                            UnityEngine.Debug.Log($"---> Key 1 (Hex): {Utils.ToHex(key1Bytes)}");
+                            UnityEngine.Debug.Log($"---> Key 2 (Hex): {Utils.ToHex(key2Bytes)}");
+                        }
+
+
+                        UnityEngine.Debug.Log($"---> Sunucudan alınan SK (objectId: {server.objectId}, fullId: {fullId}) doğrulanıyor...");
+                        try
+                        {
+                            // a) Bu sunucunun public key'ini al (InitializeAsync'te çekmiştik)
+                            if (!keyServers.TryGetValue(server.objectId, out var currentServerInfo))
+                            {
+                                UnityEngine.Debug.LogWarning($"Doğrulama için {server.objectId} sunucusunun bilgileri bulunamadı.");
+                                continue;
+                            }
+                            var serverPublicKey = G2.FromBytes(currentServerInfo.pk);
+                            
+                            // b) qId'yi hesapla
+                            var fullIdBytes = Utils.FromHex(fullId);
+                            var qId = Kdf.HashToG1(fullIdBytes);
+                            UnityEngine.Debug.Log("serverPublicKey Valid => " + serverPublicKey.IsValid());
+                            UnityEngine.Debug.Log("qId Valid => " + qId.IsValid());
+                            UnityEngine.Debug.Log("G2.Generator Valid => " + G2.Generator.IsValid());
+                            UnityEngine.Debug.Log("Partial Key Valid => " + partialKey.IsValid());
+                            // c) Denklemin sol tarafı: e(sk, G2.Generator)
+
+                            var lhsPairing = GT.Pairing(partialKey, G2.Generator);
+                            var lhsBytes = lhsPairing.ToBytes();
+
+                            // d) Denklemin sağ tarafı: e(qId, publicKey)
+                            var rhsPairing = GT.Pairing(qId, serverPublicKey);
+                            var rhsBytes = rhsPairing.ToBytes();
+
+                         
+                            // e) Karşılaştır
+                            if (lhsPairing == rhsPairing)
+                            {
+                                UnityEngine.Debug.Log($"<color=cyan>---> SK Doğrulaması BAŞARILI! Sunucu: {server.objectId}, FullID: {fullId}</color>");
+                            }
+                            else
+                            {
+                                UnityEngine.Debug.LogError($"<color=red>SK DOĞRULAMASI BAŞARISIZ! Sunucu: {server.objectId}, FullID: {fullId}. Pairing sonuçları eşleşmiyor.</color>");
+                                UnityEngine.Debug.Log($"[SK VERIFY] LHS (e(sk, G2.Gen)) (Hex): {Utils.ToHex(lhsBytes)}");
+                                UnityEngine.Debug.Log($"[SK VERIFY] RHS (e(qId, pk)) (Hex): {Utils.ToHex(rhsBytes)}");
+                            }
+                                
+                        }
+                        catch (Exception ex)
+                        {
+                            UnityEngine.Debug.LogError($"SK doğrulaması sırasında hata oluştu (Sunucu: {server.objectId}): {ex.Message}");
+                        }
+
                         // 6. Anahtarı önbelleğe ekle
                         AddKeyToCache(fullId, server.objectId, partialKey);
                         UnityEngine.Debug.Log($"Anahtar (FullID: {fullId}) {server.objectId} sunucusundan alındı ve önbelleğe eklendi.");
@@ -418,7 +704,7 @@ namespace Sui.Seal
         {
             Deserialization deserialization = new Deserialization(options.Data);
             var encryptedObject = (EncryptedObject)EncryptedObject.Deserialize(deserialization);
-            await FetchKeys(
+            await FetchKeysNew(
                 new FetchKeysOptions()
                 {
                     Ids= new[] { encryptedObject.id },
@@ -446,15 +732,15 @@ namespace Sui.Seal
 
             var ibeData = encryptedObject.encryptedShares.BonehFranklinBLS12381;
             var encryptedShares = ibeData.encryptedShares;
-            var nonce = G2.FromBytes(ibeData.nonce);
+            G2 nonce = G2.FromBytes(ibeData.nonce);
             var fullIdBytes = Utils.FromHex(fullId);
+            var qId = Kdf.HashToG1(fullIdBytes);
+            UnityEngine.Debug.Log($"[QID HESAPLANDI] (Yer: Decrypt) qId (Hex): {Utils.ToHex(qId.ToBytes())}");
             // 1. Adım: Mevcut anahtarlarla şifreli payları (shares) çöz
             var shares = availableServices.Select(service =>
             {
                 var (objectId, index) = service;
                 var sk = cachedKeys[$"{fullId}:{objectId}"];
-                UnityEngine.Debug.Log($"[DECRYPT-PAIRING-INPUT] sk (objectId: {Utils.ToHex(objectId.KeyBytes)}, index: {index}) (Hex): {Utils.ToHex(sk.ToBytes())}");
-                UnityEngine.Debug.Log($"[DECRYPT-PAIRING-INPUT] nonce (objectId: {Utils.ToHex(objectId.KeyBytes)}, index: {index}) (Hex): {Utils.ToHex(nonce.ToBytes())}");
                 int serviceIndex = Array.FindIndex(encryptedObject.services, s => s.objectId == objectId && s.index == index);
                 var encryptedShare = encryptedShares[serviceIndex];
                 var shareData = Ibe.BonehFranklin.DecryptShare(nonce, sk, encryptedShare, fullIdBytes, objectId, index);
@@ -469,13 +755,10 @@ namespace Sui.Seal
             var randomnessKey = Kdf.DeriveKey(Kdf.KeyPurpose.EncryptedRandomness, baseKey, encryptedShares, encryptedObject.threshold, allObjectIds);
             var randomness = Utils.Xor(ibeData.encryptedRandomness, randomnessKey);
             var r = Fr.FromBytes(randomness);
-
-            UnityEngine.Debug.Log("[DECRYPT DERIVE_KEY_INPUT] === Başlangıç ===");
-            UnityEngine.Debug.Log($"[DECRYPT DERIVE_KEY_INPUT] baseKey (Hex): {Utils.ToHex(baseKey)}");
-            UnityEngine.Debug.Log("[DECRYPT DERIVE_KEY_INPUT] === Bitiş ===");
-
-
-            if (!(G2.Generator * r).Equals(nonce))
+            G2 secret = G2.Generator * r;
+            string nonceStr = nonce.ToString();
+            UnityEngine.Debug.Log(nonce.ToString());
+            if (!secret.Equals(nonce))
             {
                 throw new CryptographicException("Invalid nonce, decryption failed.");
             }
