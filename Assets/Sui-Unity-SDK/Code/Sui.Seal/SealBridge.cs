@@ -1,116 +1,162 @@
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using OpenDive.BCS;
-using Org.BouncyCastle.Crypto;
-using Sui.Accounts;
-using Sui.Rpc;
 using Sui.Rpc.Client;
-using Sui.Rpc.Models;
 using Sui.Transactions;
 using Sui.Types;
 using System;
-using System.Collections;
-using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Threading.Tasks;
 using UnityEngine;
 
-public class SealBridge : MonoBehaviour
+namespace Sui.Seal
 {
-    private Account _account;
-    private SuiClient _suiClient;
-
-    private string _data = "myspecialmessage";
-    private string _objectId = "0xadeaf09c14beeff621c3a46da73f74346a1a8caf8eb26a0efc816c7d9a1c18a9";
-    private string _packageId = "0xf3dfe70b4916fecaecf7928bb8221031c28d5130c66e8fa7e645ce8785846f91";
-    private string _moduleName = "private_data";
-    private string _funcName = "store_entry";
-    private string _suiClientUrl = "testnet";
-    
-    byte[] _nonceBytes = { 179, 187, 103, 40, 166, 131, 240, 66, 249, 74, 252, 248, 94, 86, 237, 156, 126, 166, 204, 121, 87, 83, 242, 54, 142, 192, 68, 94, 192, 49, 245, 27 };
-    private string[] _serverObjectIds = { "0x73d05d62c18d9374e3ea529e8e0ed6161da1a141a94d3f76ae3fe4e99356db75", "0xf5d14a81a982144ae441cd7d64b09027f116a468bd36e7eca494f750591623c8" };
-
-
-
-    [DllImport("__Internal")] private static extern void StartEncrypt(string data, string packageId, string suiAddress, string nonceB64, string suiClientUrl, string serverObjectIdsJson);
-    [DllImport("__Internal")] private static extern void StartDecrypt(string encryptedBytesBase64, string txBytesBase64, string privateKeyB64, string packageId, string suiClientUrl, string serverObjectIdsJson);
-    
-
-    private IEnumerator Start()
+    public class SealBridge : MonoBehaviour
     {
-        _suiClient = new SuiClient(Constants.TestnetConnection);
-        _account = new Account("0x8358b8f5a0850969194d0cd0e6e70dad2ec27b981669a8caf9fc566a17c9c115");
-        yield return new WaitForSeconds(3f);
+        private SuiClient _suiClient;
 
-        //string serverObjectIdsJson = JsonConvert.SerializeObject(new SealServerObjectWrapper { items = _serverObjectIds });
-        //StartEncrypt(_data, _packageId, _account.SuiAddress().ToHex(), Convert.ToBase64String(_nonceBytes), _suiClientUrl, serverObjectIdsJson);
-        DecryptTest();
-    }
+        private string _packageId = "0xf3dfe70b4916fecaecf7928bb8221031c28d5130c66e8fa7e645ce8785846f91";
+        private string _moduleName = "private_data";
+        private string _funcName = "store_entry";
+        private int _threshold = 2;
+        private string[] _serverObjectIds = { "0x73d05d62c18d9374e3ea529e8e0ed6161da1a141a94d3f76ae3fe4e99356db75", "0xf5d14a81a982144ae441cd7d64b09027f116a468bd36e7eca494f750591623c8" };
 
-    async void DecryptTest()
-    {
-        
-        var response = await _suiClient.GetObjectAsync(new AccountAddress(_objectId), new ObjectDataOptions() { ShowContent = true });
-        var moveObject = (ParsedMoveObject)response.Result.Data.Content.ParsedData;
+        private byte[] _encryptedBytes = null;
+        private byte[] _decryptedBytes = null;
+        private bool _canceled = false;
 
-        var fields = moveObject.Fields;
+        [DllImport("__Internal")] private static extern void StartEncrypt(string data, string packageId, string suiAddress, string nonceB64, string suiClientUrl, string serverObjectIdsJson, int threshold);
+        [DllImport("__Internal")] private static extern void StartDecrypt(string encryptedBytesBase64, string txBytesBase64, string privateKeyB64, string suiAddress, string packageId, string suiClientUrl, string serverObjectIdsJson);
 
-        var encryptedBytes = (moveObject.Fields["data"] as JArray).Select(jv => (byte)jv).ToArray();
-        
-
-        var tx_block = new TransactionBlock();
-
-        tx_block.AddMoveCallTx
-        (
-            SuiMoveNormalizedStructType.FromStr($"{_packageId}::{_moduleName}::seal_approve"),
-            new SerializableTypeTag[] { },
-            new TransactionArgument[]
+        public static SealBridge Instance;
+        private void Awake()
+        {
+            if (Instance != null)
             {
-                tx_block.AddPure(new OpenDive.BCS.Bytes(Sui.Seal.Utils.CreatePolicyId(_account.SuiAddress().ToHex(), _nonceBytes))),
-                tx_block.AddObjectInput(_objectId)
+                Destroy(gameObject);
+                return;
             }
-        );
-        //tx_block.SetSender(_account);
-        var txBytes = await tx_block.Build(new BuildOptions(_suiClient, null, true, null));
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
 
-        string encryptedBytesBase64 = Convert.ToBase64String(encryptedBytes);
-        string privateKeyBase64 = _account.PrivateKey.ToBase64();
-        string txBytesBase64 = Convert.ToBase64String(txBytes);
-        string serverObjectIdsJson = JsonConvert.SerializeObject(new SealServerObjectWrapper { items = _serverObjectIds });
-        Debug.Log("calling external decrypt...");
-        StartDecrypt(encryptedBytesBase64, txBytesBase64, privateKeyBase64, _packageId, _suiClientUrl, serverObjectIdsJson);
-    }
+        public void SetSuiClient(SuiClient suiClient)
+        {
+            _suiClient = suiClient;
+        }
 
-    void OnEncryptionCompleted(string encryptedObjectBase64)
-    {
-        Debug.Log("encryptedObjectBase64 => " + encryptedObjectBase64);
-        byte[] encryptedBytes = Convert.FromBase64String(encryptedObjectBase64);
-        SendEncryptedBytesToSui(encryptedBytes);
-    }
+        public void SetThreshold(int threshold)
+        {
+            _threshold = threshold;
+        }
 
-    async void SendEncryptedBytesToSui(byte[] encryptedBytes)
-    {
-        TransactionBlock tx_block = new TransactionBlock();
-        tx_block.AddMoveCallTx
-        (
-            SuiMoveNormalizedStructType.FromStr($"{_packageId}::{_moduleName}::{_funcName}"),
-            new SerializableTypeTag[] { },
-            new TransactionArgument[]
+        public void SetServerObjectIds(params string[] serverObjectIds)
+        {
+            _serverObjectIds = serverObjectIds;
+        }
+
+        public void SetPackageInformation(string packageId, string moduleName, string funcName)
+        {
+            _packageId = packageId;
+            _moduleName = moduleName;
+            _funcName = funcName;
+        }
+
+        public async Task<TransactionBlock> Encrypt(string data, string suiAddressHex)
+        {
+            _canceled = false;
+            _encryptedBytes = null;
+            byte[] nonceBytes = new byte[32];
+            RandomNumberGenerator.Fill(nonceBytes);
+            string serverObjectIdsJson = JsonConvert.SerializeObject(new SealServerObjectWrapper { items = _serverObjectIds });
+            StartEncrypt(data, _packageId, suiAddressHex, Convert.ToBase64String(nonceBytes), _suiClient.Connection.FULL_NODE, serverObjectIdsJson, _threshold);
+            while (_encryptedBytes == null && !_canceled)
             {
-                tx_block.AddPure(new OpenDive.BCS.Bytes(_nonceBytes)),
+                await Task.Yield();
+            }
+            if (_canceled)
+            {
+                return null;
+            }
+            return PrepareTransactionBlock(_encryptedBytes, nonceBytes);
+        }
+
+        public async Task<byte[]> Decrypt(byte[] encryptedBytes, byte[] nonceBytes, string objectId, string privateKeyBase64, string suiAddressHex)
+        {
+            _canceled = false;
+            _decryptedBytes = null;
+            var tx_block = new TransactionBlock();
+            tx_block.AddMoveCallTx
+            (
+                SuiMoveNormalizedStructType.FromStr($"{_packageId}::{_moduleName}::seal_approve"),
+                new SerializableTypeTag[] { },
+                new TransactionArgument[]
+                {
+                    tx_block.AddPure(new OpenDive.BCS.Bytes(Sui.Seal.Utils.CreatePolicyId(suiAddressHex, nonceBytes))),
+                    tx_block.AddObjectInput(objectId)
+                }
+            );
+            var txBytes = await tx_block.Build(new BuildOptions(_suiClient, null, true, null));
+            string txBytesBase64 = Convert.ToBase64String(txBytes);
+            string encryptedBytesBase64 = Convert.ToBase64String(encryptedBytes);
+            string serverObjectIdsJson = JsonConvert.SerializeObject(new SealServerObjectWrapper { items = _serverObjectIds });
+            StartDecrypt(encryptedBytesBase64, txBytesBase64, privateKeyBase64, suiAddressHex, _packageId, _suiClient.Connection.FULL_NODE, serverObjectIdsJson);
+            while (_decryptedBytes == null && !_canceled)
+            {
+                await Task.Yield();
+            }
+            if (_canceled)
+            {
+                return null;
+            }
+            return _decryptedBytes;
+        }
+
+        void OnEncryptionCompleted(string encryptedObjectBase64)
+        {
+            if (encryptedObjectBase64.StartsWith("SEAL_ERROR|"))
+            {
+                _canceled = true;
+                throw new Exception(encryptedObjectBase64.Split('|')[1]);
+            }
+            _encryptedBytes = Convert.FromBase64String(encryptedObjectBase64);
+        }
+
+        void OnDecryptionCompleted(string decryptedObjectBase64)
+        {
+            if (decryptedObjectBase64.StartsWith("SEAL_ERROR|"))
+            {
+                _canceled = true;
+                throw new Exception(decryptedObjectBase64.Split('|')[1]);
+            }
+            _decryptedBytes = Convert.FromBase64String(decryptedObjectBase64);
+        }
+
+        TransactionBlock PrepareTransactionBlock(byte[] encryptedBytes, byte[] nonceBytes)
+        {
+            TransactionBlock tx_block = new TransactionBlock();
+            tx_block.AddMoveCallTx
+            (
+                SuiMoveNormalizedStructType.FromStr($"{_packageId}::{_moduleName}::{_funcName}"),
+                new SerializableTypeTag[] { },
+                new TransactionArgument[]
+                {
+                tx_block.AddPure(new OpenDive.BCS.Bytes(nonceBytes)),
                 tx_block.AddPure(new OpenDive.BCS.Bytes(encryptedBytes))
-            }
-        );
-        var result = await _suiClient.SignAndExecuteTransactionBlockAsync(tx_block, _account);
-        Debug.Log(result.Result.Digest);
+                }
+            );
+            return tx_block;
+        }
     }
-}
 
-[System.Serializable]
-public class SealServerObjectWrapper
-{
-    public string[] items;
-    public SealServerObjectWrapper()
+    [System.Serializable]
+    public class SealServerObjectWrapper
     {
+        public string[] items;
+        public SealServerObjectWrapper()
+        {
 
+        }
     }
 }
+

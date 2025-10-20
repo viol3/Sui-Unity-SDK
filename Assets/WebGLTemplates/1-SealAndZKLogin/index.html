@@ -139,16 +139,16 @@
 
   }
   
-  async function sealEncrypt(data, packageId, suiAddress, nonceB64, suiClientUrl, serverObjectIds)
+  async function sealEncrypt(data, packageId, suiAddress, nonceB64, suiClientUrl, serverObjectIds, threshold)
   {
-	const encryptedDataBase64 = await SealModule.encrypt(data, packageId, suiAddress, nonceB64, suiClientUrl, serverObjectIds);
+	const encryptedDataBase64 = await SealModule.encrypt(data, packageId, suiAddress, nonceB64, suiClientUrl, serverObjectIds, threshold);
 	window.MyGameInstance.SendMessage("SealBridge", "OnEncryptionCompleted", encryptedDataBase64);
   }
   
-  async function sealDecrypt(encryptedBytesBase64, txBytesBase64, privateKeyB64, packageId, suiClientUrl, serverObjectIds)
+  async function sealDecrypt(encryptedBytesBase64, txBytesBase64, privateKeyB64, suiAddress, packageId, suiClientUrl, serverObjectIds)
   {
-	await SealModule.decrypt(encryptedBytesBase64, txBytesBase64, privateKeyB64, packageId, suiClientUrl, serverObjectIds);
-	//window.MyGameInstance.SendMessage("SealBridge", "OnEncryptionCompleted", encryptedDataBase64);
+	const decryptedMessage = await SealModule.decrypt(encryptedBytesBase64, txBytesBase64, privateKeyB64, suiAddress, packageId, suiClientUrl, serverObjectIds);
+	window.MyGameInstance.SendMessage("SealBridge", "OnDecryptionCompleted", decryptedMessage);
   }
 </script>
 

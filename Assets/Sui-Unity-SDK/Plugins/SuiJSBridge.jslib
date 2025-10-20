@@ -14,7 +14,7 @@ mergeInto(LibraryManager.library,
 	window.googleLogin(clientId, nonce);
   },
   
-  StartEncrypt : function(data, packageId, suiAddress, nonceB64, suiClientUrl, serverObjectIds)
+  StartEncrypt : function(data, packageId, suiAddress, nonceB64, suiClientUrl, serverObjectIds, threshold)
   {
 	data = UTF8ToString(data);
 	packageId = UTF8ToString(packageId);
@@ -23,14 +23,15 @@ mergeInto(LibraryManager.library,
 	suiClientUrl = UTF8ToString(suiClientUrl);
 	var jsonString = UTF8ToString(serverObjectIds);
 	var serverObjectIdsData = JSON.parse(jsonString);
-	window.sealEncrypt(data, packageId, suiAddress, nonceB64, suiClientUrl, serverObjectIdsData.items);
+	window.sealEncrypt(data, packageId, suiAddress, nonceB64, suiClientUrl, serverObjectIdsData.items, threshold);
   },
   
-  StartDecrypt : function(encryptedBytesBase64, txBytesBase64, privateKeyB64, packageId, suiClientUrl, serverObjectIds)
+  StartDecrypt : function(encryptedBytesBase64, txBytesBase64, privateKeyB64, suiAddress, packageId, suiClientUrl, serverObjectIds)
   {
 	encryptedBytesBase64 = UTF8ToString(encryptedBytesBase64);
 	txBytesBase64 = UTF8ToString(txBytesBase64);
 	privateKeyB64 = UTF8ToString(privateKeyB64);
+	suiAddress = UTF8ToString(suiAddress);
 	packageId = UTF8ToString(packageId);
 	suiClientUrl = UTF8ToString(suiClientUrl);
 	var jsonString = UTF8ToString(serverObjectIds);
@@ -40,7 +41,7 @@ mergeInto(LibraryManager.library,
 	console.log("txBytesBase64 => ", txBytesBase64);
 	console.log("packageId => ", packageId);
 	console.log("suiClientUrl => ", suiClientUrl);
-	window.sealDecrypt(encryptedBytesBase64, txBytesBase64, privateKeyB64, packageId, suiClientUrl, serverObjectIdsData.items);
+	window.sealDecrypt(encryptedBytesBase64, txBytesBase64, privateKeyB64, suiAddress, packageId, suiClientUrl, serverObjectIdsData.items);
   },
 
 
