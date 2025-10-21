@@ -1,5 +1,6 @@
 using Newtonsoft.Json;
 using OpenDive.BCS;
+using Sui.Cryptography;
 using Sui.Rpc.Client;
 using Sui.Transactions;
 using Sui.Types;
@@ -27,6 +28,7 @@ namespace Sui.Seal
 
         [DllImport("__Internal")] private static extern void StartEncrypt(string data, string packageId, string suiAddress, string nonceB64, string suiClientUrl, string serverObjectIdsJson, int threshold);
         [DllImport("__Internal")] private static extern void StartDecrypt(string encryptedBytesBase64, string txBytesBase64, string privateKeyB64, string suiAddress, string packageId, string suiClientUrl, string serverObjectIdsJson);
+        [DllImport("__Internal")] private static extern void StartDecryptWithZKLogin(string encryptedBytesBase64, string txBytesBase64, string ephemeralPrivateKeyB64, string inputBytesB64, uint maxEpoch, string suiAddress, string packageId, string suiClientUrl, string serverObjectIdsJson);
 
         public static SealBridge Instance;
         private void Awake()
@@ -79,6 +81,38 @@ namespace Sui.Seal
                 return null;
             }
             return PrepareTransactionBlock(_encryptedBytes, nonceBytes);
+        }
+
+        public async Task<byte[]> DecryptWithZKLogin(byte[] encryptedBytes, byte[] proofInputBytes, uint maxEpoch, byte[] nonceBytes, string objectId, string ephemeralPrivateKeyBase64, string suiAddressHex)
+        {
+            _canceled = false;
+            _decryptedBytes = null;
+            var tx_block = new TransactionBlock();
+            tx_block.AddMoveCallTx
+            (
+                SuiMoveNormalizedStructType.FromStr($"{_packageId}::{_moduleName}::seal_approve"),
+                new SerializableTypeTag[] { },
+                new TransactionArgument[]
+                {
+                    tx_block.AddPure(new OpenDive.BCS.Bytes(Sui.Seal.Utils.CreatePolicyId(suiAddressHex, nonceBytes))),
+                    tx_block.AddObjectInput(objectId)
+                }
+            );
+            var txBytes = await tx_block.Build(new BuildOptions(_suiClient, null, true, null));
+            string txBytesBase64 = Convert.ToBase64String(txBytes);
+            string encryptedBytesBase64 = Convert.ToBase64String(encryptedBytes);
+            string serverObjectIdsJson = JsonConvert.SerializeObject(new SealServerObjectWrapper { items = _serverObjectIds });
+            string inputBytesB64 = Convert.ToBase64String(proofInputBytes);
+            StartDecryptWithZKLogin(encryptedBytesBase64, txBytesBase64, ephemeralPrivateKeyBase64, inputBytesB64, maxEpoch, suiAddressHex, _packageId, _suiClient.Connection.FULL_NODE, serverObjectIdsJson);
+            while (_decryptedBytes == null && !_canceled)
+            {
+                await Task.Yield();
+            }
+            if (_canceled)
+            {
+                return null;
+            }
+            return _decryptedBytes;
         }
 
         public async Task<byte[]> Decrypt(byte[] encryptedBytes, byte[] nonceBytes, string objectId, string privateKeyBase64, string suiAddressHex)

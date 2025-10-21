@@ -150,6 +150,12 @@
 	const decryptedMessage = await SealModule.decrypt(encryptedBytesBase64, txBytesBase64, privateKeyB64, suiAddress, packageId, suiClientUrl, serverObjectIds);
 	window.MyGameInstance.SendMessage("SealBridge", "OnDecryptionCompleted", decryptedMessage);
   }
+  
+  async function sealDecryptWithZKLogin(encryptedBytesBase64, txBytesBase64, ephemeralPrivateKeyB64, inputBytesB64, maxEpoch, suiAddress, packageId, suiClientUrl, serverObjectIds)
+  {
+	const decryptedMessage = await SealModule.decryptWithZKLogin(encryptedBytesBase64, txBytesBase64, ephemeralPrivateKeyB64, inputBytesB64, maxEpoch, suiAddress, packageId, suiClientUrl, serverObjectIds);
+	window.MyGameInstance.SendMessage("SealBridge", "OnDecryptionCompleted", decryptedMessage);
+  }
 </script>
 
   </body>

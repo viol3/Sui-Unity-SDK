@@ -36,13 +36,22 @@ mergeInto(LibraryManager.library,
 	suiClientUrl = UTF8ToString(suiClientUrl);
 	var jsonString = UTF8ToString(serverObjectIds);
 	var serverObjectIdsData = JSON.parse(jsonString);
-	console.log("privateKeyB64 => ", privateKeyB64);
-	console.log("encryptedBytesBase64 => ", encryptedBytesBase64);
-	console.log("txBytesBase64 => ", txBytesBase64);
-	console.log("packageId => ", packageId);
-	console.log("suiClientUrl => ", suiClientUrl);
 	window.sealDecrypt(encryptedBytesBase64, txBytesBase64, privateKeyB64, suiAddress, packageId, suiClientUrl, serverObjectIdsData.items);
   },
+  
+  StartDecryptWithZKLogin: function(encryptedBytesBase64, txBytesBase64, ephemeralPrivateKeyB64, inputBytesB64, maxEpoch, suiAddress, packageId, suiClientUrl, serverObjectIds)
+  {
+	encryptedBytesBase64 = UTF8ToString(encryptedBytesBase64);
+	txBytesBase64 = UTF8ToString(txBytesBase64);
+	ephemeralPrivateKeyB64 = UTF8ToString(ephemeralPrivateKeyB64);
+	inputBytesB64 = UTF8ToString(inputBytesB64);
+	suiAddress = UTF8ToString(suiAddress);
+	packageId = UTF8ToString(packageId);
+	suiClientUrl = UTF8ToString(suiClientUrl);
+	var jsonString = UTF8ToString(serverObjectIds);
+	var serverObjectIdsData = JSON.parse(jsonString);
+	window.sealDecryptWithZKLogin(encryptedBytesBase64, txBytesBase64, ephemeralPrivateKeyB64, inputBytesB64, maxEpoch, suiAddress, packageId, suiClientUrl, serverObjectIdsData.items);
+  }
 
 
 });

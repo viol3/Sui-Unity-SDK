@@ -319,7 +319,7 @@ namespace Sui.ZKLogin.Enoki
         {
             string jsonData = JsonConvert.SerializeObject(_zkpResponse.data);
             Inputs inputs = JsonConvert.DeserializeObject<Inputs>(jsonData);
-
+            
             transactionBlock.SetSenderIfNotSet(Sui.Accounts.AccountAddress.FromHex(_zkLoginUser.data.address));
             byte[] userTxBytes = await transactionBlock.Build(new BuildOptions(_client));
             if (transactionBlock.Error != null)
