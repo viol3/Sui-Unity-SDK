@@ -10,6 +10,9 @@ SealBridge provides a C# / Unity-side integration with the **Sui Seal encryption
 
 ## ✨ Overview
 
+Seal is a decentralized secrets management (DSM) product. Application developers and users can use Seal to secure sensitive data at rest on decentralized storage like Walrus or any other onchain / offchain storage. Seal enables identity-based encryption and decryption of sensitive data, with access controlled by onchain policies on Sui. Lightweight key servers enforce these policies and provide threshold-based decryption keys, while developers can integrate easily using the TypeScript SDK.
+You can learn more at : https://seal.mystenlabs.com/
+
 SealBridge offers Unity developers a fully managed bridge to the **Sui Seal SDK**, built only for WebGL platform for now.  
 It manages encryption and decryption flows and constructs properly authenticated Sui Move transactions that reference access policies and threshold key servers.
 
@@ -30,6 +33,7 @@ SealBridge communicates with a WebAssembly/JS runtime (`seal.bundle.js`) that pe
 
 The Unity C# layer wraps this process with asynchronous task-based APIs and transaction builder utilities from the **OpenDive Sui-Unity-SDK**.
 
+Note => Ensure you have a valid deployed seal package that has got a seal_approve function. Please read this : https://seal-docs.wal.app/UsingSeal/
 ---
 
 ## ⚙️ Requirements
@@ -78,4 +82,55 @@ void Start()
 	"MODULE NAME",
 	"FUNCTION NAME");
 }
+</code></pre>
+
+
+Define the threshold value used by Seal’s encryption policy —
+the number of servers required to approve the encryption/decryption process.
+<pre><code class="language-csharp">
+SealBridge.Instance.SetThreshold(2);
+</code></pre>
+
+Assign the list of Seal server object IDs that will participate in the approval and key retrieval process.
+<pre><code class="language-csharp">
+SealBridge.Instance.SetServerObjectIds(
+    "0x73d05d62c18d9374e3ea529e8e0ed6161da1a141a94d3f76ae3fe4e99356db75",
+    "0xf5d14a81a982144ae441cd7d64b09027f116a468bd36e7eca494f750591623c8"
+);
+</code></pre>
+
+
+Encrypt the given plaintext for a specific Sui address.
+Returns a TransactionBlock ready to be signed and executed on-chain.
+<pre><code class="language-csharp">
+var tx = await SealBridge.Instance.Encrypt("my secret text", suiAddress);
+await suiClient.SignAndExecuteTransactionBlock(tx);
+</code></pre>
+
+Decrypt the encrypted payload using a standard private key.
+Returns the original plaintext as a byte array.
+<pre><code class="language-csharp">
+var decrypted = await SealBridge.Instance.Decrypt(
+    encryptedBytes,
+    nonceBytes,
+    objectId,
+    privateKeyBase64,
+    suiAddress
+);
+
+string result = System.Text.Encoding.UTF8.GetString(decrypted);
+</code></pre>
+
+Performs decryption using Enoki’s Zero-Knowledge Login flow.
+Requires a ZK proof payload (proofInputBytes)i ephemeral private key and mex epoch.
+<pre><code class="language-csharp">
+var decrypted = await SealBridge.Instance.DecryptWithZKLogin(
+    encryptedBytes,
+    proofInputBytes,
+    maxEpoch,
+    nonceBytes,
+    objectId,
+    ephemeralPrivateKeyBase64,
+    suiAddress
+);
 </code></pre>
