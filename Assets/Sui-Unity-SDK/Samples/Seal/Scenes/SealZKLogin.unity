@@ -313,8 +313,8 @@ MonoBehaviour:
   - 0x73d05d62c18d9374e3ea529e8e0ed6161da1a141a94d3f76ae3fe4e99356db75
   - 0xf5d14a81a982144ae441cd7d64b09027f116a468bd36e7eca494f750591623c8
   _network: testnet
-  _enokiPublicKey: enoki_public_3ed3c88ff07ca65cf46192bbaf8e0787
-  _googleClientId: 186512259169-1pj5f5fj8gmeprqhat0nac0dm633lev6.apps.googleusercontent.com
+  _enokiPublicKey: 
+  _googleClientId: 
   _redirectUri: http://localhost:3000
   _saveZKPOnDevice: 1
   _loginButton: {fileID: 1648531944}
