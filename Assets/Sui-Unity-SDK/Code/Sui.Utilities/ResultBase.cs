@@ -36,13 +36,14 @@ namespace Sui.Utilities
         /// <summary>
         /// The result object.
         /// </summary>
-        public T Result { get; }
+        [JsonProperty(PropertyName = "result")]
+        public T Result { get; set; }
 
         /// <summary>
         /// The error if the execution failed.
         /// </summary>
         [JsonProperty(PropertyName = "error")]
-        public ErrorBase Error { get; }
+        public ErrorBase Error { get; set; }
 
         public ResultBase
         (
