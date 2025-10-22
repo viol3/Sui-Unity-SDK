@@ -99,6 +99,7 @@ SealBridge.Instance.SetServerObjectIds(
 );
 </code></pre>
 
+### 2. Encrypt/Decrypt data
 
 Encrypt the given plaintext for a specific Sui address.
 Returns a TransactionBlock ready to be signed and executed on-chain.
