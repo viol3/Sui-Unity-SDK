@@ -654,8 +654,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _network: testnet
-  _enokiPublicKey: enoki_public_3ed3c88ff07ca65cf46192bbaf8e0787
-  _googleClientId: 186512259169-1pj5f5fj8gmeprqhat0nac0dm633lev6.apps.googleusercontent.com
+  _enokiPublicKey: 
+  _googleClientId: 
   _redirectUri: http://localhost:3000/
   _saveZKPOnDevice: 1
   _loginButton: {fileID: 1855551007}
