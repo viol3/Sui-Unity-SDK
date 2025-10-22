@@ -167,7 +167,7 @@ namespace Sui.Seal
         }
 
         /// <summary>
-        /// Updates the UI elements based on the current ZKLogin authentication state.
+        /// Updates the UI elements based on the current ZKLogin authentication state & Seal state.
         /// Enables/disables buttons and displays the appropriate address text.
         /// </summary>
         void UpdateUI()

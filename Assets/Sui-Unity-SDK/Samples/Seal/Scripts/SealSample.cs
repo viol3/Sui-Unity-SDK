@@ -14,8 +14,26 @@ using UnityEngine.UI;
 
 namespace Sui.Seal
 {
+/*
+ * SealSample.cs
+ * 
+ * Author: viol3
+ * 
+ * Description:
+ * This MonoBehaviour script provides a simple, interactive demonstration of encrypting and decrypting 
+ * data via the Sui blockchain using the SealBridge integration. It connects to a Sui testnet instance,
+ * initializes an account, and interacts with the blockchain through UI buttons.
+ */
     public class SealSample : MonoBehaviour
     {
+        /// <summary>
+        /// Demonstrates Seal encryption and decryption flows integrated with Unity’s UI system.
+        /// 
+        /// The class handles creating a testnet client, signing transactions with the current account, 
+        /// and displaying results in the user interface.
+        /// 
+        /// Author: viol3
+        /// </summary>
         [SerializeField] private string _packageId = "0xf3dfe70b4916fecaecf7928bb8221031c28d5130c66e8fa7e645ce8785846f91";
         [SerializeField] private string _moduleName = "private_data";
         [SerializeField] private string _funcName = "store_entry";
@@ -34,6 +52,11 @@ namespace Sui.Seal
 
         private Account _account;
         private SuiClient _client;
+
+        /// <summary>
+        /// Initializes the SuiClient and Account objects using provided credentials
+        /// and sets up the SealBridge environment for encryption/decryption.
+        /// </summary>
         void Start()
         {
             _client = new SuiClient(Constants.TestnetConnection);
@@ -44,6 +67,15 @@ namespace Sui.Seal
             SealBridge.Instance.SetServerObjectIds(_serverObjectIds);
         }
 
+        /// <summary>
+        /// Triggered by UI button click to encrypt the text entered in the input field.
+        /// 
+        /// This function:
+        /// - Reads input data from the UI text field
+        /// - Calls SealBridge to perform encryption
+        /// - Submits the resulting transaction block to Sui Testnet
+        /// - Displays notification text indicating completion
+        /// </summary>
         public async void OnEncryptButtonClick()
         {
             string dataToEncrypt = _encryptTextField.text;
@@ -52,6 +84,16 @@ namespace Sui.Seal
             _encryptedText.gameObject.SetActive(true);
         }
 
+        /// <summary>
+        /// Triggered by UI button click to decrypt data stored on the Sui blockchain.
+        /// 
+        /// This function:
+        /// - Takes the target object ID from the input field
+        /// - Fetches on-chain object data using Sui RPC
+        /// - Extracts encrypted payload and nonce
+        /// - Calls SealBridge to decrypt the data
+        /// - Displays the decrypted content in the UI
+        /// </summary>
         public async void OnDecryptButtonClick()
         {
             string objectId = _decryptTextField.text;

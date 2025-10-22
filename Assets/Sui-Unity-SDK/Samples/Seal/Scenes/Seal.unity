@@ -327,7 +327,7 @@ MonoBehaviour:
   _serverObjectIds:
   - 0x73d05d62c18d9374e3ea529e8e0ed6161da1a141a94d3f76ae3fe4e99356db75
   - 0xf5d14a81a982144ae441cd7d64b09027f116a468bd36e7eca494f750591623c8
-  _privateKeyHex: 
+  _privateKeyHex: 0x6136face532a76ce175d460f2939a110d7583d2e55fe2ee06696608471668007
   _encryptButton: {fileID: 291785378}
   _decryptButton: {fileID: 206707502}
   _encryptedText: {fileID: 294455717}
@@ -417,7 +417,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 183553265}
         m_TargetAssemblyTypeName: Sui.Seal.SealSample, Assembly-CSharp
         m_MethodName: OnDecryptButtonClick
         m_Mode: 1
@@ -602,7 +602,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 183553265}
         m_TargetAssemblyTypeName: Sui.Seal.SealSample, Assembly-CSharp
         m_MethodName: OnEncryptButtonClick
         m_Mode: 1

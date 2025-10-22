@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace Sui.Seal
 {
@@ -48,30 +45,30 @@ namespace Sui.Seal
 
         public static byte[] AddressToBytes32(string address)
         {
-            // "0x" ön ekini kaldır
+            // remove "0x" prefix
             string hex = address.StartsWith("0x") ? address.Substring(2) : address;
 
-            // Eksik karakter varsa başına '0' ekleyerek çift sayıya tamamla (örn: "abc" -> "0abc")
+            // If there is a missing character, add '0' in front to make it an even number (e.g. "abc" -> "0abc")
             if (hex.Length % 2 != 0)
             {
                 hex = "0" + hex;
             }
 
-            byte[] addressBytes = FromHex(hex); // Zaten var olan FromHex metodumuzu kullanıyoruz
+            byte[] addressBytes = FromHex(hex);
 
             if (addressBytes.Length > 32)
             {
                 throw new ArgumentException("Address is longer than 32 bytes.");
             }
 
-            // 32 byte'lık bir dizi oluştur ve başını sıfırlarla doldur (padding)
+            // Creating a 32-byte array and padding it with zeros
             var result = new byte[32];
-            // Kaynak diziyi, hedef dizinin sonuna kopyala
+            // Copy the source array to the end of the destination array
             Buffer.BlockCopy(addressBytes, 0, result, 32 - addressBytes.Length, addressBytes.Length);
             return result;
         }
 
-        // Bu, TypeScript'teki '@mysten/bcs' kütüphanesinden gelen 'fromHex' fonksiyonunun karşılığıdır.
+        // This is the equivalent of the 'fromHex' function from the '@mysten/bcs' library in TypeScript.
         public static byte[] FromHex(string hex)
         {
             hex = hex.StartsWith("0x") ? hex.Substring(2) : hex;
@@ -89,7 +86,7 @@ namespace Sui.Seal
             return bytes;
         }
 
-        // Bu da 'toHex' fonksiyonunun karşılığı.
+        // This is the equivalent of the 'toHex' function.
         public static string ToHex(byte[] bytes)
         {
             return BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
@@ -98,7 +95,6 @@ namespace Sui.Seal
         // export function equals(a: Uint8Array, b: Uint8Array): boolean
         public static bool AreEqual(byte[] a, byte[] b)
         {
-            // Linq'daki SequenceEqual, bu işi en performanslı şekilde yapar.
             return a.SequenceEqual(b);
         }
 
@@ -109,7 +105,6 @@ namespace Sui.Seal
             byte[] creatorBytes = FromHex(addressHex);
 
             // const policyId = new Uint8Array([...creatorBytes, ...nonce]);
-            // Bu, iki diziyi birleştirmekle aynıdır. Flatten metodumuzu kullanıyoruz.
             byte[] policyId = Flatten(creatorBytes, nonce);
 
             return policyId;
@@ -117,13 +112,11 @@ namespace Sui.Seal
 
         public static byte[] GenerateNonce(int length = 32)
         {
-            // Belirtilen uzunlukta boş bir byte dizisi oluştur.
             var nonce = new byte[length];
 
-            // 1. Kriptografik olarak güvenli bir rastgele sayı üreteci nesnesi oluştur.
+            // Create a cryptographically secure random number generator object.
             using (var rng = RandomNumberGenerator.Create())
             {
-                // 2. Bu nesnenin 'GetBytes' metodunu kullanarak diziyi doldur.
                 rng.GetBytes(nonce);
             }
 
