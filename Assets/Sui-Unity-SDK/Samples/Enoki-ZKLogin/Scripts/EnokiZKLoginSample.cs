@@ -161,7 +161,7 @@ namespace Sui.ZKLogin.Enoki
             (
                 new TransactionArgument[]
                 {
-                splitArgs[0] // Insert split amount here
+                    splitArgs[0] // Insert split amount here
                 },
                 Sui.Accounts.AccountAddress.FromHex("0x0d9b5ca4ebae5f4a7bd3f17e4e36cd6f868d8f0c5a7f977f94f836631fe0288d")
             );
